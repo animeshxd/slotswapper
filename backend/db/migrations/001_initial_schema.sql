@@ -1,0 +1,37 @@
+-- 001_initial_schema.sql
+
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('BUSY', 'SWAPPABLE', 'SWAP_PENDING')),
+    user_id INTEGER NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE swap_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    requester_user_id INTEGER NOT NULL,
+    responder_user_id INTEGER NOT NULL,
+    requester_slot_id INTEGER NOT NULL,
+    responder_slot_id INTEGER NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('PENDING', 'ACCEPTED', 'REJECTED')),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (requester_user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (responder_user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (requester_slot_id) REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (responder_slot_id) REFERENCES events(id) ON DELETE CASCADE
+);
