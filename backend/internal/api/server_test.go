@@ -9,14 +9,14 @@ import (
 	"testing"
 	"time"
 
+	_ "github.com/mattn/go-sqlite3"
 	"slotswapper/internal/crypto"
 	"slotswapper/internal/db"
 	"slotswapper/internal/repository"
 	"slotswapper/internal/services"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
+// Helper function to create a test server and register routes
 func setupTestServer(t *testing.T) (*httptest.Server, *db.Queries, crypto.JWT) {
 	testQueries := repository.SetupTestDB(t)
 	userRepo := repository.NewUserRepository(testQueries)
@@ -40,7 +40,8 @@ func setupTestServer(t *testing.T) (*httptest.Server, *db.Queries, crypto.JWT) {
 	return httptest.NewServer(router), testQueries, jwtManager
 }
 
-func signUpAndLogin(t *testing.T, ts *httptest.Server, authService services.AuthService, name, email, password string) (string, *db.User) {
+// Helper function to sign up a user and return their token
+func signUpAndLogin(t *testing.T, ts *httptest.Server, name, email, password string) (string, *db.User) {
 	input := services.RegisterUserInput{
 		Name:     name,
 		Email:    email,
@@ -101,6 +102,7 @@ func TestAuthAPI(t *testing.T) {
 	})
 
 	t.Run("Login", func(t *testing.T) {
+		// First, sign up a user
 		signUpInput := services.RegisterUserInput{
 			Name:     "Login User",
 			Email:    "login@example.com",
@@ -115,6 +117,7 @@ func TestAuthAPI(t *testing.T) {
 			t.Fatalf("failed to sign up user: %s", signUpRr.Body.String())
 		}
 
+		// Then, attempt to log in
 		loginInput := services.LoginInput{
 			Email:    "login@example.com",
 			Password: "loginpassword",
@@ -143,142 +146,73 @@ func TestAuthAPI(t *testing.T) {
 }
 
 func TestEventAPI(t *testing.T) {
-	ts, testQueries, jwtManager := setupTestServer(t)
+	ts, _, _ := setupTestServer(t)
 	defer ts.Close()
 
-	authService := services.NewAuthService(repository.NewUserRepository(testQueries), crypto.NewPassword(), jwtManager)
-	token, user := signUpAndLogin(t, ts, authService, "Event User", "event@example.com", "eventpassword")
+	// Sign up a user to get a token
+	token, user := signUpAndLogin(t, ts, "Event User", "event@example.com", "eventpassword")
 
-	t.Run("CreateEvent", func(t *testing.T) {
+	t.Run("Event CRUD", func(t *testing.T) {
+		// 1. Create Event
 		startTime := time.Now()
 		endTime := startTime.Add(time.Hour)
-		input := services.CreateEventInput{
+		createInput := services.CreateEventInput{
 			Title:     "My New Event",
 			StartTime: startTime,
 			EndTime:   endTime,
 			Status:    "BUSY",
 		}
-		body, _ := json.Marshal(input)
-
-		req, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/events", bytes.NewBuffer(body))
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", "Bearer "+token)
-
-		rr := httptest.NewRecorder()
-		ts.Config.Handler.ServeHTTP(rr, req)
-
-		if rr.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d: %s", http.StatusOK, rr.Code, rr.Body.String())
-		}
-
-		var event db.Event
-		json.NewDecoder(rr.Body).Decode(&event)
-		if event.ID == 0 {
-			t.Error("expected event ID to be non-zero")
-		}
-	})
-
-	t.Run("GetEventByID", func(t *testing.T) {
-		startTime := time.Now()
-		endTime := startTime.Add(time.Hour)
-		createInput := services.CreateEventInput{
-			Title:     "Event to Get",
-			StartTime: startTime,
-			EndTime:   endTime,
-			Status:    "BUSY",
-		}
 		createBody, _ := json.Marshal(createInput)
 		createReq, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/events", bytes.NewBuffer(createBody))
 		createReq.Header.Set("Content-Type", "application/json")
 		createReq.Header.Set("Authorization", "Bearer "+token)
 		createRr := httptest.NewRecorder()
 		ts.Config.Handler.ServeHTTP(createRr, createReq)
+
 		if createRr.Code != http.StatusOK {
-			t.Fatalf("failed to create event: %s", createRr.Body.String())
+			t.Fatalf("CreateEvent: expected status %d, got %d: %s", http.StatusOK, createRr.Code, createRr.Body.String())
 		}
 		var createdEvent db.Event
 		json.NewDecoder(createRr.Body).Decode(&createdEvent)
-
-		req, _ := http.NewRequest(http.MethodGet, ts.URL+fmt.Sprintf("/api/events/%d", createdEvent.ID), nil)
-		req.Header.Set("Authorization", "Bearer "+token)
-
-		rr := httptest.NewRecorder()
-		ts.Config.Handler.ServeHTTP(rr, req)
-
-		if rr.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d: %s", http.StatusOK, rr.Code, rr.Body.String())
+		if createdEvent.ID == 0 {
+			t.Fatal("CreateEvent: expected event ID to be non-zero")
 		}
 
+		// 2. Get Event By ID
+		getReq, _ := http.NewRequest(http.MethodGet, ts.URL+fmt.Sprintf("/api/events/%d", createdEvent.ID), nil)
+		getReq.Header.Set("Authorization", "Bearer "+token)
+		getRr := httptest.NewRecorder()
+		ts.Config.Handler.ServeHTTP(getRr, getReq)
+
+		if getRr.Code != http.StatusOK {
+			t.Fatalf("GetEventByID: expected status %d, got %d: %s", http.StatusOK, getRr.Code, getRr.Body.String())
+		}
 		var retrievedEvent db.Event
-		json.NewDecoder(rr.Body).Decode(&retrievedEvent)
+		json.NewDecoder(getRr.Body).Decode(&retrievedEvent)
 		if retrievedEvent.ID != createdEvent.ID {
-			t.Errorf("expected event ID %d, got %d", createdEvent.ID, retrievedEvent.ID)
-		}
-	})
-
-	t.Run("GetEventsByUserID", func(t *testing.T) {
-		startTime := time.Now()
-		endTime := startTime.Add(time.Hour)
-		createInput := services.CreateEventInput{
-			Title:     "User Event for List",
-			StartTime: startTime,
-			EndTime:   endTime,
-			Status:    "BUSY",
-		}
-		createBody, _ := json.Marshal(createInput)
-		createReq, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/events", bytes.NewBuffer(createBody))
-		createReq.Header.Set("Content-Type", "application/json")
-		createReq.Header.Set("Authorization", "Bearer "+token)
-		createRr := httptest.NewRecorder()
-		ts.Config.Handler.ServeHTTP(createRr, createReq)
-		if createRr.Code != http.StatusOK {
-			t.Fatalf("failed to create event: %s", createRr.Body.String())
+			t.Errorf("GetEventByID: expected event ID %d, got %d", createdEvent.ID, retrievedEvent.ID)
 		}
 
-		req, _ := http.NewRequest(http.MethodGet, ts.URL+"/api/events/user", nil)
-		req.Header.Set("Authorization", "Bearer "+token)
+		// 3. Get Events By User ID
+		listReq, _ := http.NewRequest(http.MethodGet, ts.URL+"/api/events/user", nil)
+		listReq.Header.Set("Authorization", "Bearer "+token)
+		listRr := httptest.NewRecorder()
+		ts.Config.Handler.ServeHTTP(listRr, listReq)
 
-		rr := httptest.NewRecorder()
-		ts.Config.Handler.ServeHTTP(rr, req)
-
-		if rr.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d: %s", http.StatusOK, rr.Code, rr.Body.String())
+		if listRr.Code != http.StatusOK {
+			t.Fatalf("GetEventsByUserID: expected status %d, got %d: %s", http.StatusOK, listRr.Code, listRr.Body.String())
 		}
-
 		var events []db.Event
-		json.NewDecoder(rr.Body).Decode(&events)
+		json.NewDecoder(listRr.Body).Decode(&events)
 		if len(events) == 0 {
-			t.Error("expected at least one event")
+			t.Fatal("GetEventsByUserID: expected at least one event")
 		}
 		if events[0].UserID != user.ID {
-			t.Errorf("expected event to be owned by user %d, got %d", user.ID, events[0].UserID)
+			t.Errorf("GetEventsByUserID: expected event to be owned by user %d, got %d", user.ID, events[0].UserID)
 		}
-	})
 
-	t.Run("UpdateEventStatus", func(t *testing.T) {
-		startTime := time.Now()
-		endTime := startTime.Add(time.Hour)
-		createInput := services.CreateEventInput{
-			Title:     "Event to Update",
-			StartTime: startTime,
-			EndTime:   endTime,
-			Status:    "BUSY",
-		}
-		createBody, _ := json.Marshal(createInput)
-		createReq, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/events", bytes.NewBuffer(createBody))
-		createReq.Header.Set("Content-Type", "application/json")
-		createReq.Header.Set("Authorization", "Bearer "+token)
-		createRr := httptest.NewRecorder()
-		ts.Config.Handler.ServeHTTP(createRr, createReq)
-		if createRr.Code != http.StatusOK {
-			t.Fatalf("failed to create event: %s", createRr.Body.String())
-		}
-		var createdEvent db.Event
-		json.NewDecoder(createRr.Body).Decode(&createdEvent)
-
-		updateInput := services.UpdateEventStatusInput{
-			Status: "SWAPPABLE",
-		}
+		// 4. Update Event Status
+		updateInput := services.UpdateEventStatusInput{Status: "SWAPPABLE"}
 		updateBody, _ := json.Marshal(updateInput)
 		updateReq, _ := http.NewRequest(http.MethodPut, ts.URL+fmt.Sprintf("/api/events/%d", createdEvent.ID), bytes.NewBuffer(updateBody))
 		updateReq.Header.Set("Content-Type", "application/json")
@@ -287,143 +221,119 @@ func TestEventAPI(t *testing.T) {
 		ts.Config.Handler.ServeHTTP(updateRr, updateReq)
 
 		if updateRr.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d: %s", http.StatusOK, updateRr.Code, updateRr.Body.String())
+			t.Fatalf("UpdateEventStatus: expected status %d, got %d: %s", http.StatusOK, updateRr.Code, updateRr.Body.String())
 		}
-
 		var updatedEvent db.Event
 		json.NewDecoder(updateRr.Body).Decode(&updatedEvent)
 		if updatedEvent.Status != "SWAPPABLE" {
-			t.Errorf("expected event status to be SWAPPABLE, got %s", updatedEvent.Status)
+			t.Errorf("UpdateEventStatus: expected status SWAPPABLE, got %s", updatedEvent.Status)
 		}
-	})
 
-	t.Run("DeleteEvent", func(t *testing.T) {
-		startTime := time.Now()
-		endTime := startTime.Add(time.Hour)
-		createInput := services.CreateEventInput{
-			Title:     "Event to Delete",
-			StartTime: startTime,
-			EndTime:   endTime,
-			Status:    "BUSY",
-		}
-		createBody, _ := json.Marshal(createInput)
-		createReq, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/events", bytes.NewBuffer(createBody))
-		createReq.Header.Set("Content-Type", "application/json")
-		createReq.Header.Set("Authorization", "Bearer "+token)
-		createRr := httptest.NewRecorder()
-		ts.Config.Handler.ServeHTTP(createRr, createReq)
-		if createRr.Code != http.StatusOK {
-			t.Fatalf("failed to create event: %s", createRr.Body.String())
-		}
-		var createdEvent db.Event
-		json.NewDecoder(createRr.Body).Decode(&createdEvent)
+		// 5. Delete Event
+		deleteReq, _ := http.NewRequest(http.MethodDelete, ts.URL+fmt.Sprintf("/api/events/%d", createdEvent.ID), nil)
+		deleteReq.Header.Set("Authorization", "Bearer "+token)
+		deleteRr := httptest.NewRecorder()
+		ts.Config.Handler.ServeHTTP(deleteRr, deleteReq)
 
-		req, _ := http.NewRequest(http.MethodDelete, ts.URL+fmt.Sprintf("/api/events/%d", createdEvent.ID), nil)
-		req.Header.Set("Authorization", "Bearer "+token)
-
-		rr := httptest.NewRecorder()
-		ts.Config.Handler.ServeHTTP(rr, req)
-
-		if rr.Code != http.StatusNoContent {
-			t.Errorf("expected status %d, got %d: %s", http.StatusNoContent, rr.Code, rr.Body.String())
+		if deleteRr.Code != http.StatusNoContent {
+			t.Fatalf("DeleteEvent: expected status %d, got %d: %s", http.StatusNoContent, deleteRr.Code, deleteRr.Body.String())
 		}
 	})
 }
 
 func TestSwapAPI(t *testing.T) {
-	ts, testQueries, jwtManager := setupTestServer(t)
+	ts, _, _ := setupTestServer(t)
 	defer ts.Close()
 
-	authService := services.NewAuthService(repository.NewUserRepository(testQueries), crypto.NewPassword(), jwtManager)
-	token1, user1 := signUpAndLogin(t, ts, authService, "Swap User 1", "swap1@example.com", "swappassword1")
-	token2, user2 := signUpAndLogin(t, ts, authService, "Swap User 2", "swap2@example.com", "swappassword2")
+	// Sign up two users
+	token1, user1 := signUpAndLogin(t, ts, "Swap User 1", "swap1@example.com", "swappassword1")
+	token2, user2 := signUpAndLogin(t, ts, "Swap User 2", "swap2@example.com", "swappassword2")
 
-	startTime1 := time.Now()
-	endTime1 := startTime1.Add(time.Hour)
-	eventInput1 := services.CreateEventInput{
-		Title:     "User1 Swappable Event",
-		StartTime: startTime1,
-		EndTime:   endTime1,
-		Status:    "SWAPPABLE",
+	// Create swappable events for both users
+	createEvent := func(token string) db.Event {
+		startTime := time.Now()
+		endTime := startTime.Add(time.Hour)
+		input := services.CreateEventInput{
+			Title:     "Swappable Event",
+			StartTime: startTime,
+			EndTime:   endTime,
+			Status:    "SWAPPABLE",
+		}
+		body, _ := json.Marshal(input)
+		req, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/events", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+token)
+		rr := httptest.NewRecorder()
+		ts.Config.Handler.ServeHTTP(rr, req)
+		if rr.Code != http.StatusOK {
+			t.Fatalf("failed to create event: %s", rr.Body.String())
+		}
+		var event db.Event
+		json.NewDecoder(rr.Body).Decode(&event)
+		return event
 	}
-	body1, _ := json.Marshal(eventInput1)
-	req1, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/events", bytes.NewBuffer(body1))
-	req1.Header.Set("Content-Type", "application/json")
-	req1.Header.Set("Authorization", "Bearer "+token1)
-	rr1 := httptest.NewRecorder()
-	ts.Config.Handler.ServeHTTP(rr1, req1)
-	if rr1.Code != http.StatusOK {
-		t.Fatalf("failed to create event for user1: %s", rr1.Body.String())
-	}
-	var event1 db.Event
-	json.NewDecoder(rr1.Body).Decode(&event1)
 
-	startTime2 := time.Now().Add(2 * time.Hour)
-	endTime2 := startTime2.Add(time.Hour)
-	eventInput2 := services.CreateEventInput{
-		Title:     "User2 Swappable Event",
-		StartTime: startTime2,
-		EndTime:   endTime2,
-		Status:    "SWAPPABLE",
-	}
-	body2, _ := json.Marshal(eventInput2)
-	req2, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/events", bytes.NewBuffer(body2))
-	req2.Header.Set("Content-Type", "application/json")
-	req2.Header.Set("Authorization", "Bearer "+token2)
-	rr2 := httptest.NewRecorder()
-	ts.Config.Handler.ServeHTTP(rr2, req2)
-	if rr2.Code != http.StatusOK {
-		t.Fatalf("failed to create event for user2: %s", rr2.Body.String())
-	}
-	var event2 db.Event
-	json.NewDecoder(rr2.Body).Decode(&event2)
+	event1 := createEvent(token1)
+	event2 := createEvent(token2)
 
 	t.Run("GetSwappableEvents", func(t *testing.T) {
 		req, _ := http.NewRequest(http.MethodGet, ts.URL+"/api/swappable-slots", nil)
 		req.Header.Set("Authorization", "Bearer "+token1)
-
 		rr := httptest.NewRecorder()
 		ts.Config.Handler.ServeHTTP(rr, req)
 
 		if rr.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d: %s", http.StatusOK, rr.Code, rr.Body.String())
+			t.Fatalf("GetSwappableEvents: expected status %d, got %d: %s", http.StatusOK, rr.Code, rr.Body.String())
 		}
-
 		var events []db.Event
 		json.NewDecoder(rr.Body).Decode(&events)
 		if len(events) == 0 {
-			t.Error("expected at least one swappable event")
+			t.Fatal("GetSwappableEvents: expected at least one swappable event")
 		}
 		if events[0].UserID == user1.ID {
-			t.Error("expected swappable event not to be owned by the requesting user")
+			t.Error("GetSwappableEvents: expected swappable event not to be owned by the requesting user")
 		}
 	})
 
-	t.Run("CreateSwapRequest", func(t *testing.T) {
-		input := services.CreateSwapRequestInput{
-			RequesterUserID: user1.ID,
+	t.Run("Full Swap Flow", func(t *testing.T) {
+		// 1. Create Swap Request
+		createReqInput := services.CreateSwapRequestInput{
 			ResponderUserID: user2.ID,
 			RequesterSlotID: event1.ID,
 			ResponderSlotID: event2.ID,
 		}
-		body, _ := json.Marshal(input)
+		createReqBody, _ := json.Marshal(createReqInput)
+		createReq, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/swap-request", bytes.NewBuffer(createReqBody))
+		createReq.Header.Set("Content-Type", "application/json")
+		createReq.Header.Set("Authorization", "Bearer "+token1)
+		createRr := httptest.NewRecorder()
+		ts.Config.Handler.ServeHTTP(createRr, createReq)
 
-		req, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/swap-request", bytes.NewBuffer(body))
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", "Bearer "+token1)
-
-		rr := httptest.NewRecorder()
-		ts.Config.Handler.ServeHTTP(rr, req)
-
-		if rr.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d: %s", http.StatusOK, rr.Code, rr.Body.String())
+		if createRr.Code != http.StatusOK {
+			t.Fatalf("CreateSwapRequest: expected status %d, got %d: %s", http.StatusOK, createRr.Code, createRr.Body.String())
+		}
+		var createdSwapRequest db.SwapRequest
+		json.NewDecoder(createRr.Body).Decode(&createdSwapRequest)
+		if createdSwapRequest.ID == 0 {
+			t.Fatal("CreateSwapRequest: expected swap request ID to be non-zero")
 		}
 
-		var swapRequest db.SwapRequest
-		json.NewDecoder(rr.Body).Decode(&swapRequest)
-		if swapRequest.ID == 0 {
-			t.Error("expected swap request ID to be non-zero")
+		// 2. Accept Swap Request
+		acceptInput := map[string]string{"status": "ACCEPTED"}
+		acceptBody, _ := json.Marshal(acceptInput)
+		acceptReq, _ := http.NewRequest(http.MethodPost, ts.URL+fmt.Sprintf("/api/swap-response/%d", createdSwapRequest.ID), bytes.NewBuffer(acceptBody))
+		acceptReq.Header.Set("Content-Type", "application/json")
+		acceptReq.Header.Set("Authorization", "Bearer "+token2) // Responder accepts
+		acceptRr := httptest.NewRecorder()
+		ts.Config.Handler.ServeHTTP(acceptRr, acceptReq)
+
+		if acceptRr.Code != http.StatusOK {
+			t.Fatalf("AcceptSwapRequest: expected status %d, got %d: %s", http.StatusOK, acceptRr.Code, acceptRr.Body.String())
+		}
+		var acceptedSwapRequest db.SwapRequest
+		json.NewDecoder(acceptRr.Body).Decode(&acceptedSwapRequest)
+		if acceptedSwapRequest.Status != "ACCEPTED" {
+			t.Errorf("AcceptSwapRequest: expected status ACCEPTED, got %s", acceptedSwapRequest.Status)
 		}
 	})
-
 }
