@@ -9,7 +9,8 @@ import {
 import * as TanStackQueryProvider from "./integrations/tanstack-query/root-provider.tsx";
 
 // Import the generated route tree
-import { routeTree } from "./routeTree.gen";
+import { routeTree } from "./routeTree.gen.ts";
+import { useAuthStore } from "./lib/store.ts";
 
 import "./styles.css";
 import reportWebVitals from "./reportWebVitals.ts";
@@ -21,11 +22,17 @@ const router = createRouter({
 	routeTree,
 	context: {
 		...TanStackQueryProviderContext,
+		auth: useAuthStore.getState(),
 	},
 	defaultPreload: "intent",
 	scrollRestoration: true,
 	defaultStructuralSharing: true,
 	defaultPreloadStaleTime: 0,
+});
+
+// Subscribe to the auth store and update the router context
+useAuthStore.subscribe((state) => {
+	router.options.context.auth = state;
 });
 
 // Register the router instance for type safety
@@ -52,3 +59,4 @@ if (rootElement && !rootElement.innerHTML) {
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();
+console.log(import.meta.env);
