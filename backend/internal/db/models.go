@@ -9,32 +9,32 @@ import (
 )
 
 type Event struct {
-	ID        int64
-	Title     string
-	StartTime time.Time
-	EndTime   time.Time
-	Status    string
-	UserID    int64
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        int64     `json:"id"`
+	Title     string    `json:"title"`
+	StartTime time.Time `json:"start_time"`
+	EndTime   time.Time `json:"end_time"`
+	Status    string    `json:"status"`
+	UserID    int64     `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type SwapRequest struct {
-	ID              int64
-	RequesterUserID int64
-	ResponderUserID int64
-	RequesterSlotID int64
-	ResponderSlotID int64
-	Status          string
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	ID              int64     `json:"id"`
+	RequesterUserID int64     `json:"requester_user_id"`
+	ResponderUserID int64     `json:"responder_user_id"`
+	RequesterSlotID int64     `json:"requester_slot_id"`
+	ResponderSlotID int64     `json:"responder_slot_id"`
+	Status          string    `json:"status"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 type User struct {
-	ID        int64
-	Name      string
-	Email     string
-	Password  string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Password  string    `json:"password"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }

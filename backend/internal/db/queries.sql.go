@@ -27,11 +27,11 @@ INSERT INTO events (
 `
 
 type CreateEventParams struct {
-	Title     string
-	StartTime time.Time
-	EndTime   time.Time
-	Status    string
-	UserID    int64
+	Title     string    `json:"title"`
+	StartTime time.Time `json:"start_time"`
+	EndTime   time.Time `json:"end_time"`
+	Status    string    `json:"status"`
+	UserID    int64     `json:"user_id"`
 }
 
 func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event, error) {
@@ -73,11 +73,11 @@ INSERT INTO swap_requests (
 `
 
 type CreateSwapRequestParams struct {
-	RequesterUserID int64
-	ResponderUserID int64
-	RequesterSlotID int64
-	ResponderSlotID int64
-	Status          string
+	RequesterUserID int64  `json:"requester_user_id"`
+	ResponderUserID int64  `json:"responder_user_id"`
+	RequesterSlotID int64  `json:"requester_slot_id"`
+	ResponderSlotID int64  `json:"responder_slot_id"`
+	Status          string `json:"status"`
 }
 
 func (q *Queries) CreateSwapRequest(ctx context.Context, arg CreateSwapRequestParams) (SwapRequest, error) {
@@ -115,9 +115,9 @@ INSERT INTO users (
 `
 
 type CreateUserParams struct {
-	Name     string
-	Email    string
-	Password string
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -282,10 +282,10 @@ WHERE id = ?
 `
 
 type GetPublicUserByIDRow struct {
-	ID        int64
-	Name      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func (q *Queries) GetPublicUserByID(ctx context.Context, id int64) (GetPublicUserByIDRow, error) {
@@ -383,11 +383,11 @@ WHERE id = ?
 `
 
 type GetUserByIDRow struct {
-	ID        int64
-	Name      string
-	Email     string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func (q *Queries) GetUserByID(ctx context.Context, id int64) (GetUserByIDRow, error) {
@@ -411,8 +411,8 @@ RETURNING id, title, start_time, end_time, status, user_id, created_at, updated_
 `
 
 type UpdateEventStatusParams struct {
-	Status string
-	ID     int64
+	Status string `json:"status"`
+	ID     int64  `json:"id"`
 }
 
 func (q *Queries) UpdateEventStatus(ctx context.Context, arg UpdateEventStatusParams) (Event, error) {
@@ -439,8 +439,8 @@ RETURNING id, title, start_time, end_time, status, user_id, created_at, updated_
 `
 
 type UpdateEventUserIDParams struct {
-	UserID int64
-	ID     int64
+	UserID int64 `json:"user_id"`
+	ID     int64 `json:"id"`
 }
 
 func (q *Queries) UpdateEventUserID(ctx context.Context, arg UpdateEventUserIDParams) (Event, error) {
@@ -467,8 +467,8 @@ RETURNING id, requester_user_id, responder_user_id, requester_slot_id, responder
 `
 
 type UpdateSwapRequestStatusParams struct {
-	Status string
-	ID     int64
+	Status string `json:"status"`
+	ID     int64  `json:"id"`
 }
 
 func (q *Queries) UpdateSwapRequestStatus(ctx context.Context, arg UpdateSwapRequestStatusParams) (SwapRequest, error) {
