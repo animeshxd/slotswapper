@@ -61,7 +61,7 @@ func (s *authService) Register(ctx context.Context, input RegisterUserInput) (*d
 	if err != nil {
 		return nil, "", err
 	}
-
+	user.Password = ""
 	return &user, token, nil
 }
 
@@ -83,6 +83,6 @@ func (s *authService) Login(ctx context.Context, input LoginInput) (*db.User, st
 	if err != nil {
 		return nil, "", err
 	}
-
+	user.Password = ""
 	return &user, token, nil
 }

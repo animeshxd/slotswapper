@@ -8,6 +8,7 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/rs/cors"
 
 	"slotswapper/internal/api"
 	"slotswapper/internal/crypto"
@@ -53,6 +54,18 @@ func main() {
 	router := http.NewServeMux()
 	server.RegisterRoutes(router)
 
+	// Setup CORS middleware
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type"},
+		AllowCredentials: true,
+		Debug:            true,
+	})
+
+	handler := c.Handler(router)
+	
+
 	log.Println("Server starting on port 8080...")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":8080", handler))
 }
