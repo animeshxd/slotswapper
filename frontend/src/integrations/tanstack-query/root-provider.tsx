@@ -1,4 +1,8 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+	// biome-ignore lint/nursery/noUnresolvedImports: false positive
+	QueryClient,
+	QueryClientProvider,
+} from "@tanstack/react-query";
 
 export function getContext() {
 	const queryClient = new QueryClient();

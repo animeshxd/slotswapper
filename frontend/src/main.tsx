@@ -1,6 +1,10 @@
-import { StrictMode } from "react";
-import ReactDOM from "react-dom/client";
+import * as ReactDOM from "react-dom/client";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
+
+import {
+	// biome-ignore lint/nursery/noUnresolvedImports: false positive
+	StrictMode,
+} from "react";
 
 import * as TanStackQueryProvider from "./integrations/tanstack-query/root-provider.tsx";
 

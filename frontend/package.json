@@ -8,7 +8,7 @@
     "serve": "vite preview",
     "test": "vitest run",
     "format": "biome format",
-    "lint": "biome lint",
+    "lint": "tsc --noEmit && biome lint",
     "check": "biome check"
   },
   "dependencies": {
@@ -30,7 +30,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.4",
+    "@biomejs/biome": "2.3.3",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.2.0",
     "@types/node": "^22.10.2",
