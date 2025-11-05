@@ -372,5 +372,9 @@ func TestEventService(t *testing.T) {
 		if len(swappableEvents) != 1 {
 			t.Errorf("expected 1 swappable event, got %d", len(swappableEvents))
 		}
+
+		if swappableEvents[0].OwnerName != otherUser.Name {
+			t.Errorf("expected owner name to be %q, got %q", otherUser.Name, swappableEvents[0].OwnerName)
+		}
 	})
 }

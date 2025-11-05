@@ -322,19 +322,35 @@ func (q *Queries) GetSwapRequestByID(ctx context.Context, id int64) (SwapRequest
 }
 
 const getSwappableEvents = `-- name: GetSwappableEvents :many
-SELECT id, title, start_time, end_time, status, user_id, created_at, updated_at FROM events
-WHERE status = 'SWAPPABLE' AND user_id != ?
+SELECT
+    e.id, e.title, e.start_time, e.end_time, e.status, e.user_id, e.created_at, e.updated_at,
+    u.name as owner_name
+FROM events e
+JOIN users u ON e.user_id = u.id
+WHERE e.status = 'SWAPPABLE' AND e.user_id != ?
 `
 
-func (q *Queries) GetSwappableEvents(ctx context.Context, userID int64) ([]Event, error) {
+type GetSwappableEventsRow struct {
+	ID        int64     `json:"id"`
+	Title     string    `json:"title"`
+	StartTime time.Time `json:"start_time"`
+	EndTime   time.Time `json:"end_time"`
+	Status    string    `json:"status"`
+	UserID    int64     `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	OwnerName string    `json:"owner_name"`
+}
+
+func (q *Queries) GetSwappableEvents(ctx context.Context, userID int64) ([]GetSwappableEventsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getSwappableEvents, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Event
+	var items []GetSwappableEventsRow
 	for rows.Next() {
-		var i Event
+		var i GetSwappableEventsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Title,
@@ -344,6 +360,7 @@ func (q *Queries) GetSwappableEvents(ctx context.Context, userID int64) ([]Event
 			&i.UserID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.OwnerName,
 		); err != nil {
 			return nil, err
 		}

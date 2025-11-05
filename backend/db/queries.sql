@@ -61,8 +61,12 @@ DELETE FROM events
 WHERE id = ?;
 
 -- name: GetSwappableEvents :many
-SELECT * FROM events
-WHERE status = 'SWAPPABLE' AND user_id != ?;
+SELECT
+    e.id, e.title, e.start_time, e.end_time, e.status, e.user_id, e.created_at, e.updated_at,
+    u.name as owner_name
+FROM events e
+JOIN users u ON e.user_id = u.id
+WHERE e.status = 'SWAPPABLE' AND e.user_id != ?;
 
 -- name: CreateSwapRequest :one
 INSERT INTO swap_requests (
