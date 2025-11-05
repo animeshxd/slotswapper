@@ -87,3 +87,60 @@ func TestServer_handleGetSwappableEvents(t *testing.T) {
 		t.Errorf("Unexpected event data.\nGot:  %+v\nWant: %+v", events[0], expectedEvent)
 	}
 }
+
+func TestServer_handleGetEventsByUserIDAndStatus(t *testing.T) {
+	queries := repository.SetupTestDB(t)
+	// dbConn := queries.DB()
+	// defer dbConn.Close()
+
+	userRepo := repository.NewUserRepository(queries)
+	eventRepo := repository.NewEventRepository(queries)
+	swapRepo := repository.NewSwapRequestRepository(queries)
+	authService := services.NewAuthService(userRepo, nil, nil) // Mocks
+	eventService := services.NewEventService(eventRepo, userRepo)
+	swapRequestService := services.NewSwapRequestService(swapRepo, eventRepo, userRepo)
+
+	server := NewServer(authService, nil, eventService, swapRequestService, nil)
+
+	// Create a user
+	user, err := userRepo.CreateUser(context.Background(), db.CreateUserParams{Name: "User One", Email: "user1@test.com", Password: "password"})
+	if err != nil {
+		t.Fatalf("Failed to create user: %v", err)
+	}
+
+	// Create swappable and busy events
+	_, err = eventRepo.CreateEvent(context.Background(), db.CreateEventParams{Title: "Swappable Event", UserID: user.ID, Status: "SWAPPABLE"})
+	if err != nil {
+		t.Fatalf("Failed to create swappable event: %v", err)
+	}
+
+	_, err = eventRepo.CreateEvent(context.Background(), db.CreateEventParams{Title: "Busy Event", UserID: user.ID, Status: "BUSY"})
+	if err != nil {
+		t.Fatalf("Failed to create busy event: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/api/events/user?status=SWAPPABLE", nil)
+	ctx := context.WithValue(req.Context(), userIDContextKey, user.ID)
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(server.handleGetEventsByUserID)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	var events []db.Event
+	if err := json.Unmarshal(rr.Body.Bytes(), &events); err != nil {
+		t.Fatalf("Failed to unmarshal response body: %v", err)
+	}
+
+	if len(events) != 1 {
+		t.Fatalf("Expected 1 event, got %d", len(events))
+	}
+
+	if events[0].Status != "SWAPPABLE" {
+		t.Errorf("Expected event status to be SWAPPABLE, got %s", events[0].Status)
+	}
+}

@@ -202,6 +202,48 @@ func (q *Queries) GetEventsByUserID(ctx context.Context, userID int64) ([]Event,
 	return items, nil
 }
 
+const getEventsByUserIDAndStatus = `-- name: GetEventsByUserIDAndStatus :many
+SELECT id, title, start_time, end_time, status, user_id, created_at, updated_at FROM events
+WHERE user_id = ? AND status = ?
+`
+
+type GetEventsByUserIDAndStatusParams struct {
+	UserID int64  `json:"user_id"`
+	Status string `json:"status"`
+}
+
+func (q *Queries) GetEventsByUserIDAndStatus(ctx context.Context, arg GetEventsByUserIDAndStatusParams) ([]Event, error) {
+	rows, err := q.db.QueryContext(ctx, getEventsByUserIDAndStatus, arg.UserID, arg.Status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Event
+	for rows.Next() {
+		var i Event
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.StartTime,
+			&i.EndTime,
+			&i.Status,
+			&i.UserID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getIncomingSwapRequests = `-- name: GetIncomingSwapRequests :many
 SELECT id, requester_user_id, responder_user_id, requester_slot_id, responder_slot_id, status, created_at, updated_at FROM swap_requests
 WHERE responder_user_id = ?

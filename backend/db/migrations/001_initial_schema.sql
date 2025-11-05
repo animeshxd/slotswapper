@@ -1,6 +1,6 @@
 -- 001_initial_schema.sql
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
@@ -9,7 +9,7 @@ CREATE TABLE users (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE events (
+CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     start_time TIMESTAMP NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE events (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE swap_requests (
+CREATE TABLE IF NOT EXISTS swap_requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     requester_user_id INTEGER NOT NULL,
     responder_user_id INTEGER NOT NULL,

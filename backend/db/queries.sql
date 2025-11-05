@@ -44,6 +44,10 @@ WHERE id = ?;
 SELECT * FROM events
 WHERE user_id = ?;
 
+-- name: GetEventsByUserIDAndStatus :many
+SELECT * FROM events
+WHERE user_id = ? AND status = ?;
+
 -- name: UpdateEventStatus :one
 UPDATE events
 SET status = ?

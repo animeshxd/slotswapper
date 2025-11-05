@@ -10,6 +10,7 @@ type EventRepository interface {
 	CreateEvent(ctx context.Context, arg db.CreateEventParams) (db.Event, error)
 	GetEventByID(ctx context.Context, id int64) (db.Event, error)
 	GetEventsByUserID(ctx context.Context, userID int64) ([]db.Event, error)
+	GetEventsByUserIDAndStatus(ctx context.Context, params db.GetEventsByUserIDAndStatusParams) ([]db.Event, error)
 	UpdateEventStatus(ctx context.Context, arg db.UpdateEventStatusParams) (db.Event, error)
 	UpdateEventUserID(ctx context.Context, arg db.UpdateEventUserIDParams) (db.Event, error)
 	DeleteEvent(ctx context.Context, id int64) error
@@ -38,6 +39,10 @@ func (r *eventRepository) GetEventByID(ctx context.Context, id int64) (db.Event,
 
 func (r *eventRepository) GetEventsByUserID(ctx context.Context, userID int64) ([]db.Event, error) {
 	return r.queries.GetEventsByUserID(ctx, userID)
+}
+
+func (r *eventRepository) GetEventsByUserIDAndStatus(ctx context.Context, params db.GetEventsByUserIDAndStatusParams) ([]db.Event, error) {
+	return r.queries.GetEventsByUserIDAndStatus(ctx, params)
 }
 
 func (r *eventRepository) UpdateEventStatus(ctx context.Context, arg db.UpdateEventStatusParams) (db.Event, error) {

@@ -28,6 +28,7 @@ type EventService interface {
 	CreateEvent(ctx context.Context, input CreateEventInput) (*db.Event, error)
 	GetEventByID(ctx context.Context, id int64) (*db.Event, error)
 	GetEventsByUserID(ctx context.Context, userID int64) ([]db.Event, error)
+	GetEventsByUserIDAndStatus(ctx context.Context, userID int64, status string) ([]db.Event, error)
 	UpdateEventStatus(ctx context.Context, input UpdateEventStatusInput) (*db.Event, error)
 	DeleteEvent(ctx context.Context, eventID, userID int64) error
 	GetSwappableEvents(ctx context.Context, userID int64) ([]db.GetSwappableEventsRow, error)
@@ -86,6 +87,10 @@ func (s *eventService) GetEventByID(ctx context.Context, id int64) (*db.Event, e
 
 func (s *eventService) GetEventsByUserID(ctx context.Context, userID int64) ([]db.Event, error) {
 	return s.eventRepo.GetEventsByUserID(ctx, userID)
+}
+
+func (s *eventService) GetEventsByUserIDAndStatus(ctx context.Context, userID int64, status string) ([]db.Event, error) {
+	return s.eventRepo.GetEventsByUserIDAndStatus(ctx, db.GetEventsByUserIDAndStatusParams{UserID: userID, Status: status})
 }
 
 func (s *eventService) UpdateEventStatus(ctx context.Context, input UpdateEventStatusInput) (*db.Event, error) {

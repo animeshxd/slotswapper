@@ -109,6 +109,19 @@ func (s *Server) handleGetEventsByUserID(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	status := r.URL.Query().Get("status")
+
+	if status != "" {
+		events, err := s.eventService.GetEventsByUserIDAndStatus(r.Context(), userID, status)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(events)
+		return
+	}
+
 	events, err := s.eventService.GetEventsByUserID(r.Context(), userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

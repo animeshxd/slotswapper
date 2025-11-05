@@ -377,4 +377,47 @@ func TestEventService(t *testing.T) {
 			t.Errorf("expected owner name to be %q, got %q", otherUser.Name, swappableEvents[0].OwnerName)
 		}
 	})
+
+	t.Run("GetEventsByUserIDAndStatus", func(t *testing.T) {
+		testQueries, user := repository.SetupTestDBWithUser(t)
+		eventRepo := repository.NewEventRepository(testQueries)
+		userRepo := repository.NewUserRepository(testQueries)
+		eventService := NewEventService(eventRepo, userRepo)
+
+		startTime := time.Now()
+		endTime := startTime.Add(time.Hour)
+
+		// Create a swappable event
+		input := CreateEventInput{
+			Title:     "Service Swappable Event",
+			StartTime: startTime,
+			EndTime:   endTime,
+			Status:    "SWAPPABLE",
+			UserID:    user.ID,
+		}
+		_, err := eventService.CreateEvent(context.Background(), input)
+		if err != nil {
+			t.Fatalf("failed to create swappable event: %v", err)
+		}
+
+		// Create a busy event
+		input.Status = "BUSY"
+		_, err = eventService.CreateEvent(context.Background(), input)
+		if err != nil {
+			t.Fatalf("failed to create busy event: %v", err)
+		}
+
+		events, err := eventService.GetEventsByUserIDAndStatus(context.Background(), user.ID, "SWAPPABLE")
+		if err != nil {
+			t.Fatalf("failed to get events by user ID and status: %v", err)
+		}
+
+		if len(events) != 1 {
+			t.Errorf("expected 1 event, got %d", len(events))
+		}
+
+		if events[0].Status != "SWAPPABLE" {
+			t.Errorf("expected event status to be SWAPPABLE, got %s", events[0].Status)
+		}
+	})
 }
