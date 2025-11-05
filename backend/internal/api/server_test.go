@@ -29,19 +29,19 @@ func setupTestServer(t *testing.T) (*httptest.Server, *db.Queries, crypto.JWT) {
 	jwtManager := crypto.NewJWT(jwtSecret, jwtTTL)
 
 	authService := services.NewAuthService(userRepo, passwordCrypto, jwtManager)
-	userCreator := services.NewUserCreator(userRepo, passwordCrypto)
+	userService := services.NewUserService(userRepo, passwordCrypto)
 	eventService := services.NewEventService(eventRepo, userRepo)
 	swapRequestService := services.NewSwapRequestService(swapRepo, eventRepo, userRepo)
 
-	server := NewServer(authService, userCreator, eventService, swapRequestService, jwtManager)
+	server := NewServer(authService, userService, eventService, swapRequestService, jwtManager)
 	router := http.NewServeMux()
 	server.RegisterRoutes(router)
 
 	return httptest.NewServer(router), testQueries, jwtManager
 }
 
-// Helper function to sign up a user and return their token
-func signUpAndLogin(t *testing.T, ts *httptest.Server, name, email, password string) (string, *db.User) {
+// Helper function to sign up a user and return their token, user object, and access_token cookie
+func signUpAndLogin(t *testing.T, ts *httptest.Server, name, email, password string) (string, *db.User, *http.Cookie) {
 	input := services.RegisterUserInput{
 		Name:     name,
 		Email:    email,
@@ -65,57 +65,41 @@ func signUpAndLogin(t *testing.T, ts *httptest.Server, name, email, password str
 	}
 	json.NewDecoder(rr.Body).Decode(&response)
 
-	return response.Token, &response.User
+	var accessTokenCookie *http.Cookie
+	for _, cookie := range rr.Result().Cookies() {
+		if cookie.Name == "access_token" {
+			accessTokenCookie = cookie
+			break
+		}
+	}
+
+	return response.Token, &response.User, accessTokenCookie
 }
 
 func TestAuthAPI(t *testing.T) {
 	ts, _, _ := setupTestServer(t)
 	defer ts.Close()
 
-	t.Run("SignUp", func(t *testing.T) {
-		input := services.RegisterUserInput{
-			Name:     "Test User",
-			Email:    "test@example.com",
-			Password: "password123",
+	t.Run("SignUp sets cookie and returns token", func(t *testing.T) {
+		token, user, cookie := signUpAndLogin(t, ts, "Test User", "test@example.com", "password123")
+
+		if token == "" {
+			t.Error("expected token to be non-empty")
 		}
-		body, _ := json.Marshal(input)
-
-		req, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/signup", bytes.NewBuffer(body))
-		req.Header.Set("Content-Type", "application/json")
-
-		rr := httptest.NewRecorder()
-		ts.Config.Handler.ServeHTTP(rr, req)
-
-		if rr.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d: %s", http.StatusOK, rr.Code, rr.Body.String())
+		if user == nil {
+			t.Error("expected user to be non-nil")
 		}
-
-		var response map[string]interface{}
-		json.NewDecoder(rr.Body).Decode(&response)
-
-		if response["user"] == nil {
-			t.Error("expected user in response")
+		if cookie == nil {
+			t.Error("expected access_token cookie to be set")
 		}
-		if response["token"] == nil {
-			t.Error("expected token in response")
+		if cookie != nil && cookie.Value != token {
+			t.Errorf("expected cookie value %q, got %q", token, cookie.Value)
 		}
 	})
 
-	t.Run("Login", func(t *testing.T) {
+	t.Run("Login sets cookie and returns token", func(t *testing.T) {
 		// First, sign up a user
-		signUpInput := services.RegisterUserInput{
-			Name:     "Login User",
-			Email:    "login@example.com",
-			Password: "loginpassword",
-		}
-		signUpBody, _ := json.Marshal(signUpInput)
-		signUpReq, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/signup", bytes.NewBuffer(signUpBody))
-		signUpReq.Header.Set("Content-Type", "application/json")
-		signUpRr := httptest.NewRecorder()
-		ts.Config.Handler.ServeHTTP(signUpRr, signUpReq)
-		if signUpRr.Code != http.StatusOK {
-			t.Fatalf("failed to sign up user: %s", signUpRr.Body.String())
-		}
+		signUpAndLogin(t, ts, "Login User", "login@example.com", "loginpassword")
 
 		// Then, attempt to log in
 		loginInput := services.LoginInput{
@@ -133,15 +117,93 @@ func TestAuthAPI(t *testing.T) {
 			t.Errorf("expected status %d, got %d: %s", http.StatusOK, loginRr.Code, loginRr.Body.String())
 		}
 
-		var response map[string]interface{}
+		var response struct {
+			User  db.User `json:"user"`
+			Token string  `json:"token"`
+		}
 		json.NewDecoder(loginRr.Body).Decode(&response)
 
-		if response["user"] == nil {
+		if response.User.ID == 0 {
 			t.Error("expected user in response")
 		}
-		if response["token"] == nil {
+		if response.Token == "" {
 			t.Error("expected token in response")
 		}
+
+		// Check for cookie
+		cookies := loginRr.Result().Cookies()
+		found := false
+		for _, cookie := range cookies {
+			if cookie.Name == "access_token" {
+				found = true
+				if cookie.Value != response.Token {
+					t.Errorf("expected cookie value %q, got %q", response.Token, cookie.Value)
+				}
+				break
+			}
+		}
+		if !found {
+			t.Error("expected access_token cookie to be set on login")
+		}
+	})
+}
+
+func TestUserAPI(t *testing.T) {
+	ts, _, _ := setupTestServer(t)
+	defer ts.Close()
+
+	// Sign up a user to get a token and cookie
+	_, user, cookie := signUpAndLogin(t, ts, "User API Test User", "userapi@example.com", "userapipassword")
+	if cookie == nil {
+		t.Fatal("access_token cookie not found after signup")
+	}
+
+	t.Run("Get /api/me", func(t *testing.T) {
+		req, _ := http.NewRequest(http.MethodGet, ts.URL+"/api/me", nil)
+		req.AddCookie(cookie)
+		rr := httptest.NewRecorder()
+		ts.Config.Handler.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("Get /api/me: expected status %d, got %d: %s", http.StatusOK, rr.Code, rr.Body.String())
+		}
+
+		var retrievedUser db.GetUserByIDRow
+		json.NewDecoder(rr.Body).Decode(&retrievedUser)
+		if retrievedUser.ID != user.ID {
+			t.Errorf("Get /api/me: expected user ID %d, got %d", user.ID, retrievedUser.ID)
+		}
+		if retrievedUser.Email != user.Email {
+			t.Errorf("Get /api/me: expected user email %q, got %q", user.Email, retrievedUser.Email)
+		}
+	})
+
+	t.Run("Get /api/users/{id}", func(t *testing.T) {
+		// Create another user for public profile test
+		_, publicUser, publicCookie := signUpAndLogin(t, ts, "Public User", "public@example.com", "publicpassword")
+		if publicCookie == nil {
+			t.Fatal("access_token cookie not found for public user signup")
+		}
+
+		req, _ := http.NewRequest(http.MethodGet, ts.URL+fmt.Sprintf("/api/users/%d", publicUser.ID), nil)
+		req.AddCookie(cookie)
+		rr := httptest.NewRecorder()
+		ts.Config.Handler.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("Get /api/users/{id}: expected status %d, got %d: %s", http.StatusOK, rr.Code, rr.Body.String())
+		}
+
+		var retrievedPublicUser db.GetPublicUserByIDRow
+		json.NewDecoder(rr.Body).Decode(&retrievedPublicUser)
+		if retrievedPublicUser.ID != publicUser.ID {
+			t.Errorf("Get /api/users/{id}: expected user ID %d, got %d", publicUser.ID, retrievedPublicUser.ID)
+		}
+		if retrievedPublicUser.Name != publicUser.Name {
+			t.Errorf("Get /api/users/{id}: expected user name %q, got %q", publicUser.Name, retrievedPublicUser.Name)
+		}
+		// Ensure email is not returned in public profile
+		// This is implicitly tested by the type db.GetPublicUserByIDRow not having an Email field
 	})
 }
 
@@ -149,10 +211,13 @@ func TestEventAPI(t *testing.T) {
 	ts, _, _ := setupTestServer(t)
 	defer ts.Close()
 
-	// Sign up a user to get a token
-	token, user := signUpAndLogin(t, ts, "Event User", "event@example.com", "eventpassword")
+	// Sign up a user to get a token and cookie
+	_, user, cookie := signUpAndLogin(t, ts, "Event User", "event@example.com", "eventpassword")
+	if cookie == nil {
+		t.Fatal("access_token cookie not found after signup")
+	}
 
-	t.Run("Event CRUD", func(t *testing.T) {
+	t.Run("Event CRUD with Cookie", func(t *testing.T) {
 		// 1. Create Event
 		startTime := time.Now()
 		endTime := startTime.Add(time.Hour)
@@ -165,7 +230,7 @@ func TestEventAPI(t *testing.T) {
 		createBody, _ := json.Marshal(createInput)
 		createReq, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/events", bytes.NewBuffer(createBody))
 		createReq.Header.Set("Content-Type", "application/json")
-		createReq.Header.Set("Authorization", "Bearer "+token)
+		createReq.AddCookie(cookie)
 		createRr := httptest.NewRecorder()
 		ts.Config.Handler.ServeHTTP(createRr, createReq)
 
@@ -180,7 +245,7 @@ func TestEventAPI(t *testing.T) {
 
 		// 2. Get Event By ID
 		getReq, _ := http.NewRequest(http.MethodGet, ts.URL+fmt.Sprintf("/api/events/%d", createdEvent.ID), nil)
-		getReq.Header.Set("Authorization", "Bearer "+token)
+		getReq.AddCookie(cookie)
 		getRr := httptest.NewRecorder()
 		ts.Config.Handler.ServeHTTP(getRr, getReq)
 
@@ -195,7 +260,7 @@ func TestEventAPI(t *testing.T) {
 
 		// 3. Get Events By User ID
 		listReq, _ := http.NewRequest(http.MethodGet, ts.URL+"/api/events/user", nil)
-		listReq.Header.Set("Authorization", "Bearer "+token)
+		listReq.AddCookie(cookie)
 		listRr := httptest.NewRecorder()
 		ts.Config.Handler.ServeHTTP(listRr, listReq)
 
@@ -216,7 +281,7 @@ func TestEventAPI(t *testing.T) {
 		updateBody, _ := json.Marshal(updateInput)
 		updateReq, _ := http.NewRequest(http.MethodPut, ts.URL+fmt.Sprintf("/api/events/%d", createdEvent.ID), bytes.NewBuffer(updateBody))
 		updateReq.Header.Set("Content-Type", "application/json")
-		updateReq.Header.Set("Authorization", "Bearer "+token)
+		updateReq.AddCookie(cookie)
 		updateRr := httptest.NewRecorder()
 		ts.Config.Handler.ServeHTTP(updateRr, updateReq)
 
@@ -231,7 +296,7 @@ func TestEventAPI(t *testing.T) {
 
 		// 5. Delete Event
 		deleteReq, _ := http.NewRequest(http.MethodDelete, ts.URL+fmt.Sprintf("/api/events/%d", createdEvent.ID), nil)
-		deleteReq.Header.Set("Authorization", "Bearer "+token)
+		deleteReq.AddCookie(cookie)
 		deleteRr := httptest.NewRecorder()
 		ts.Config.Handler.ServeHTTP(deleteRr, deleteReq)
 
@@ -245,12 +310,15 @@ func TestSwapAPI(t *testing.T) {
 	ts, _, _ := setupTestServer(t)
 	defer ts.Close()
 
-	// Sign up two users
-	token1, user1 := signUpAndLogin(t, ts, "Swap User 1", "swap1@example.com", "swappassword1")
-	token2, user2 := signUpAndLogin(t, ts, "Swap User 2", "swap2@example.com", "swappassword2")
+	// Sign up two users and get their tokens and cookies
+	_, user1, cookie1 := signUpAndLogin(t, ts, "Swap User 1", "swap1@example.com", "swappassword1")
+	_, user2, cookie2 := signUpAndLogin(t, ts, "Swap User 2", "swap2@example.com", "swappassword2")
+	if cookie1 == nil || cookie2 == nil {
+		t.Fatal("access_token cookie not found after signup for swap users")
+	}
 
 	// Create swappable events for both users
-	createEvent := func(token string) db.Event {
+	createEvent := func(cookie *http.Cookie) db.Event {
 		startTime := time.Now()
 		endTime := startTime.Add(time.Hour)
 		input := services.CreateEventInput{
@@ -262,7 +330,7 @@ func TestSwapAPI(t *testing.T) {
 		body, _ := json.Marshal(input)
 		req, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/events", bytes.NewBuffer(body))
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", "Bearer "+token)
+		req.AddCookie(cookie)
 		rr := httptest.NewRecorder()
 		ts.Config.Handler.ServeHTTP(rr, req)
 		if rr.Code != http.StatusOK {
@@ -273,12 +341,12 @@ func TestSwapAPI(t *testing.T) {
 		return event
 	}
 
-	event1 := createEvent(token1)
-	event2 := createEvent(token2)
+	event1 := createEvent(cookie1)
+	event2 := createEvent(cookie2)
 
 	t.Run("GetSwappableEvents", func(t *testing.T) {
 		req, _ := http.NewRequest(http.MethodGet, ts.URL+"/api/swappable-slots", nil)
-		req.Header.Set("Authorization", "Bearer "+token1)
+		req.AddCookie(cookie1)
 		rr := httptest.NewRecorder()
 		ts.Config.Handler.ServeHTTP(rr, req)
 
@@ -305,7 +373,7 @@ func TestSwapAPI(t *testing.T) {
 		createReqBody, _ := json.Marshal(createReqInput)
 		createReq, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/swap-request", bytes.NewBuffer(createReqBody))
 		createReq.Header.Set("Content-Type", "application/json")
-		createReq.Header.Set("Authorization", "Bearer "+token1)
+		createReq.AddCookie(cookie1)
 		createRr := httptest.NewRecorder()
 		ts.Config.Handler.ServeHTTP(createRr, createReq)
 
@@ -323,7 +391,7 @@ func TestSwapAPI(t *testing.T) {
 		acceptBody, _ := json.Marshal(acceptInput)
 		acceptReq, _ := http.NewRequest(http.MethodPost, ts.URL+fmt.Sprintf("/api/swap-response/%d", createdSwapRequest.ID), bytes.NewBuffer(acceptBody))
 		acceptReq.Header.Set("Content-Type", "application/json")
-		acceptReq.Header.Set("Authorization", "Bearer "+token2) // Responder accepts
+		acceptReq.AddCookie(cookie2) // Responder accepts
 		acceptRr := httptest.NewRecorder()
 		ts.Config.Handler.ServeHTTP(acceptRr, acceptReq)
 

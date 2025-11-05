@@ -9,26 +9,30 @@ import (
 	"slotswapper/internal/validation"
 )
 
+// CreateUserInput defines the input for creating a user.
 type CreateUserInput struct {
 	Name     string `json:"name" validate:"required"`
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=8"`
 }
 
-type UserCreator interface {
+// UserService is responsible for user-related operations.
+type UserService interface {
 	CreateUser(ctx context.Context, input CreateUserInput) (*db.User, error)
+	GetUserByID(ctx context.Context, id int64) (*db.GetUserByIDRow, error)
+	GetPublicUserByID(ctx context.Context, id int64) (*db.GetPublicUserByIDRow, error)
 }
 
-type userCreator struct {
+type userService struct {
 	userRepo repository.UserRepository
 	password crypto.Password
 }
 
-func NewUserCreator(userRepo repository.UserRepository, password crypto.Password) UserCreator {
-	return &userCreator{userRepo: userRepo, password: password}
+func NewUserService(userRepo repository.UserRepository, password crypto.Password) UserService {
+	return &userService{userRepo: userRepo, password: password}
 }
 
-func (s *userCreator) CreateUser(ctx context.Context, input CreateUserInput) (*db.User, error) {
+func (s *userService) CreateUser(ctx context.Context, input CreateUserInput) (*db.User, error) {
 	if err := validation.Validate.Struct(input); err != nil {
 		return nil, err
 	}
@@ -49,5 +53,21 @@ func (s *userCreator) CreateUser(ctx context.Context, input CreateUserInput) (*d
 		return nil, err
 	}
 
+	return &user, nil
+}
+
+func (s *userService) GetUserByID(ctx context.Context, id int64) (*db.GetUserByIDRow, error) {
+	user, err := s.userRepo.GetUserByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (s *userService) GetPublicUserByID(ctx context.Context, id int64) (*db.GetPublicUserByIDRow, error) {
+	user, err := s.userRepo.GetPublicUserByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
 	return &user, nil
 }

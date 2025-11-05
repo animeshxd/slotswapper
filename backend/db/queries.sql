@@ -13,6 +13,14 @@ INSERT INTO users (
 SELECT * FROM users
 WHERE email = ?;
 
+-- name: GetUserByID :one
+SELECT id, name, email, created_at, updated_at FROM users
+WHERE id = ?;
+
+-- name: GetPublicUserByID :one
+SELECT id, name, created_at, updated_at FROM users
+WHERE id = ?;
+
 -- name: CreateEvent :one
 INSERT INTO events (
     title,

@@ -276,6 +276,30 @@ func (q *Queries) GetOutgoingSwapRequests(ctx context.Context, requesterUserID i
 	return items, nil
 }
 
+const getPublicUserByID = `-- name: GetPublicUserByID :one
+SELECT id, name, created_at, updated_at FROM users
+WHERE id = ?
+`
+
+type GetPublicUserByIDRow struct {
+	ID        int64
+	Name      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (q *Queries) GetPublicUserByID(ctx context.Context, id int64) (GetPublicUserByIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getPublicUserByID, id)
+	var i GetPublicUserByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getSwapRequestByID = `-- name: GetSwapRequestByID :one
 SELECT id, requester_user_id, responder_user_id, requester_slot_id, responder_slot_id, status, created_at, updated_at FROM swap_requests
 WHERE id = ?
@@ -347,6 +371,32 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Name,
 		&i.Email,
 		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUserByID = `-- name: GetUserByID :one
+SELECT id, name, email, created_at, updated_at FROM users
+WHERE id = ?
+`
+
+type GetUserByIDRow struct {
+	ID        int64
+	Name      string
+	Email     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (q *Queries) GetUserByID(ctx context.Context, id int64) (GetUserByIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserByID, id)
+	var i GetUserByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

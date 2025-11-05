@@ -44,11 +44,11 @@ func main() {
 	swapRepo := repository.NewSwapRequestRepository(queries)
 
 	authService := services.NewAuthService(userRepo, passwordCrypto, jwtManager)
-	userCreator := services.NewUserCreator(userRepo, passwordCrypto)
+	userService := services.NewUserService(userRepo, passwordCrypto)
 	eventService := services.NewEventService(eventRepo, userRepo)
 	swapRequestService := services.NewSwapRequestService(swapRepo, eventRepo, userRepo)
 
-	server := api.NewServer(authService, userCreator, eventService, swapRequestService, jwtManager)
+	server := api.NewServer(authService, userService, eventService, swapRequestService, jwtManager)
 
 	router := http.NewServeMux()
 	server.RegisterRoutes(router)

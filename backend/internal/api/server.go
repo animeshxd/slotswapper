@@ -11,17 +11,17 @@ import (
 
 type Server struct {
 	authService        services.AuthService
-	userCreator        services.UserCreator
+	userService        services.UserService
 	eventService       services.EventService
 	swapRequestService services.SwapRequestService
 	validator          *validator.Validate
 	jwtManager         crypto.JWT
 }
 
-func NewServer(authService services.AuthService, userCreator services.UserCreator, eventService services.EventService, swapRequestService services.SwapRequestService, jwtManager crypto.JWT) *Server {
+func NewServer(authService services.AuthService, userService services.UserService, eventService services.EventService, swapRequestService services.SwapRequestService, jwtManager crypto.JWT) *Server {
 	return &Server{
 		authService:        authService,
-		userCreator:        userCreator,
+		userService:        userService,
 		eventService:       eventService,
 		swapRequestService: swapRequestService,
 		validator:          validator.New(),
@@ -37,6 +37,10 @@ func (s *Server) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("POST /api/login", s.handleLogin)
 
 	// Protected routes
+	// User routes
+	router.Handle("GET /api/me", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleGetMe)))
+	router.Handle("GET /api/users/{id}", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleGetUserProfile)))
+
 	// Event routes
 	router.Handle("POST /api/events", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleCreateEvent)))
 	router.Handle("GET /api/events/user", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleGetEventsByUserID)))

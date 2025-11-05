@@ -137,7 +137,8 @@ func (s *swapRequestService) UpdateSwapRequestStatus(ctx context.Context, input 
 		return nil, errors.New("user is not authorized to update this swap request")
 	}
 
-	if input.Status == "REJECTED" {
+	switch input.Status {
+	case "REJECTED":
 		_, err = s.eventRepo.UpdateEventStatus(ctx, db.UpdateEventStatusParams{
 			ID:     swapRequest.RequesterSlotID,
 			Status: "SWAPPABLE",
@@ -152,7 +153,7 @@ func (s *swapRequestService) UpdateSwapRequestStatus(ctx context.Context, input 
 		if err != nil {
 			return nil, err
 		}
-	} else if input.Status == "ACCEPTED" {
+	case "ACCEPTED":
 
 		requesterEvent, err := s.eventRepo.GetEventByID(ctx, swapRequest.RequesterSlotID)
 		if err != nil {
