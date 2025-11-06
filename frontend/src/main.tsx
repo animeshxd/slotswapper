@@ -4,6 +4,8 @@ import { RouterProvider, createRouter } from "@tanstack/react-router";
 import {
 	// biome-ignore lint/nursery/noUnresolvedImports: false positive
 	StrictMode,
+	useEffect,
+	useState,
 } from "react";
 
 import * as TanStackQueryProvider from "./integrations/tanstack-query/root-provider.tsx";
@@ -42,21 +44,53 @@ declare module "@tanstack/react-router" {
 	}
 }
 
-// Render the app
+function App() {
+	const { isAuthenticated, setUser, logout } = useAuthStore();
+	const [isLoading, setIsLoading] = useState(true);
+
+	useEffect(() => {
+		const fetchUser = async () => {
+			try {
+				const res = await fetch(
+					`${import.meta.env.VITE_HTTP_SERVER_URL}/api/me`,
+					{ credentials: "include" },
+				);
+				if (!res.ok) {
+					throw new Error("Failed to fetch user");
+				}
+				const user = await res.json();
+				setUser(user);
+			} catch (error) {
+				console.error(error);
+				logout();
+			}
+		};
+        console.log({isAuthenticated, isLoading})
+		if (!isAuthenticated) {
+			fetchUser().finally(() => setIsLoading(false));
+		} else {
+			setIsLoading(false);
+            
+		}
+	}, [isAuthenticated, setUser, logout, isLoading]);
+
+	if (isLoading) {
+		return <div>Loading...</div>; // Or a proper loading spinner
+	}
+
+	return <RouterProvider router={router} />;
+}
+
 const rootElement = document.getElementById("app");
 if (rootElement && !rootElement.innerHTML) {
 	const root = ReactDOM.createRoot(rootElement);
 	root.render(
 		<StrictMode>
 			<TanStackQueryProvider.Provider {...TanStackQueryProviderContext}>
-				<RouterProvider router={router} />
+				<App />
 			</TanStackQueryProvider.Provider>
 		</StrictMode>,
 	);
 }
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();
-console.log(import.meta.env);

@@ -8,20 +8,24 @@ import {
 import {
 	createFileRoute,
 	Outlet,
+	redirect,
 	type LoaderFnContext,
 } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_protected")({
+    
 	beforeLoad: ({ context, location }: LoaderFnContext) => {
 		if (!context.auth.isAuthenticated) {
-			return {
-				redirect: {
+			throw redirect(
+					{
 					to: "/login",
 					search: {
 						redirect: location.href,
 					},
-				},
-			};
+				}
+				
+			)
+            
 		}
 	},
 	component: () => (
