@@ -116,6 +116,7 @@ function RequestsComponent() {
               <p><strong>Your Event:</strong> {req.requester_event_title} ({new Date(req.requester_event_start_time).toLocaleString()})</p>
               <p><strong>Their Event:</strong> {req.responder_event_title} ({new Date(req.responder_event_start_time).toLocaleString()})</p>
               <p className="text-sm text-muted-foreground mt-2">Status: PENDING</p>
+              <Button size="sm" variant="destructive" onClick={() => mutation.mutate({ id: req.id, status: 'REJECTED' })}>Cancel</Button>
             </div>
           ))}
         </CardContent>
