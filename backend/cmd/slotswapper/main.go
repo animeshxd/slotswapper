@@ -21,6 +21,7 @@ import (
 func main() {
 	configPath := flag.String("config", "config.json", "path to configuration file")
 	dbPath := flag.String("db", "db/slotswapper.db", "path to database file")
+	port := os.Getenv("PORT")
 	flag.Parse()
 	config, err := api.LoadConfig(*configPath)
 
@@ -64,7 +65,7 @@ func main() {
 
 	// Setup CORS middleware
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedOrigins:   config.AllowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Authorization", "Content-Type"},
 		AllowCredentials: true,
@@ -76,6 +77,9 @@ func main() {
 	Addr := ":8080"
 	if config != nil && config.Addr != "" {
 		Addr = config.Addr
+	}
+	if port != "" {
+		Addr = ":" + port
 	}
 	log.Printf("Server starting on %s\n", Addr)
 	log.Fatal(http.ListenAndServe(Addr, handler))
