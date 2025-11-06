@@ -27,7 +27,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 	const handleLogout = () => {
 		logout();
-        serverLogout().finally(() => navigate({ to: "/login" }))
+		serverLogout().finally(() => navigate({ to: "/login" }));
 	};
 
 	return (

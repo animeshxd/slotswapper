@@ -22,7 +22,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
 export async function serverLogout() {
 	await fetch(`${import.meta.env.VITE_HTTP_SERVER_URL}/api/logout`, {
-        method: "POST",
+		method: "POST",
 		credentials: "include",
 	});
 }

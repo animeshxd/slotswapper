@@ -13,19 +13,14 @@ import {
 } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_protected")({
-    
 	beforeLoad: ({ context, location }: LoaderFnContext) => {
 		if (!context.auth.isAuthenticated) {
-			throw redirect(
-					{
-					to: "/login",
-					search: {
-						redirect: location.href,
-					},
-				}
-				
-			)
-            
+			throw redirect({
+				to: "/login",
+				search: {
+					redirect: location.href,
+				},
+			});
 		}
 	},
 	component: () => (

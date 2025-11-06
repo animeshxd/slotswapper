@@ -65,12 +65,11 @@ function App() {
 				logout();
 			}
 		};
-        console.log({isAuthenticated, isLoading})
+		console.log({ isAuthenticated, isLoading });
 		if (!isAuthenticated) {
 			fetchUser().finally(() => setIsLoading(false));
 		} else {
 			setIsLoading(false);
-            
 		}
 	}, [isAuthenticated, setUser, logout, isLoading]);
 
