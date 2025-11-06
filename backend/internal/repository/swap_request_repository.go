@@ -11,7 +11,9 @@ type SwapRequestRepository interface {
 	GetSwapRequestByID(ctx context.Context, id int64) (db.SwapRequest, error)
 	GetIncomingSwapRequests(ctx context.Context, userID int64) ([]db.GetIncomingSwapRequestsRow, error)
 	GetOutgoingSwapRequests(ctx context.Context, requesterUserID int64) ([]db.GetOutgoingSwapRequestsRow, error)
-	UpdateSwapRequestStatus(ctx context.Context, arg db.UpdateSwapRequestStatusParams) (db.SwapRequest, error)
+UpdateSwapRequestStatus(ctx context.Context, arg db.UpdateSwapRequestStatusParams) (db.SwapRequest, error)
+	DeleteSwapRequest(ctx context.Context, id int64) error
+	GetSwapRequestsByEventID(ctx context.Context, eventID int64) ([]db.SwapRequest, error)
 }
 
 type swapRequestRepository struct {
@@ -40,4 +42,12 @@ func (r *swapRequestRepository) GetOutgoingSwapRequests(ctx context.Context, req
 
 func (r *swapRequestRepository) UpdateSwapRequestStatus(ctx context.Context, arg db.UpdateSwapRequestStatusParams) (db.SwapRequest, error) {
 	return r.queries.UpdateSwapRequestStatus(ctx, arg)
+}
+
+func (r *swapRequestRepository) DeleteSwapRequest(ctx context.Context, id int64) error {
+	return r.queries.DeleteSwapRequest(ctx, id)
+}
+
+func (r *swapRequestRepository) GetSwapRequestsByEventID(ctx context.Context, eventID int64) ([]db.SwapRequest, error) {
+	return r.queries.GetSwapRequestsByEventID(ctx, db.GetSwapRequestsByEventIDParams{RequesterSlotID: eventID, ResponderSlotID: eventID})
 }

@@ -45,7 +45,8 @@ func (s *Server) RegisterRoutes(router *http.ServeMux) {
 	router.Handle("POST /api/events", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleCreateEvent)))
 	router.Handle("GET /api/events/user", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleGetEventsByUserID)))
 	router.Handle("GET /api/events/{id}", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleGetEventByID)))
-	router.Handle("PUT /api/events/{id}", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleUpdateEventStatus)))
+	router.Handle("PUT /api/events/{id}", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleUpdateEvent)))
+	router.Handle("PUT /api/events/{id}/status", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleUpdateEventStatus)))
 	router.Handle("DELETE /api/events/{id}", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleDeleteEvent)))
 
 	// Swap routes

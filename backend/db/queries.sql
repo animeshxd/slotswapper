@@ -64,6 +64,15 @@ RETURNING *;
 DELETE FROM events
 WHERE id = ?;
 
+-- name: UpdateEvent :one
+UPDATE events
+SET title = ?,
+    start_time = ?,
+    end_time = ?,
+    status = ?
+WHERE id = ?
+RETURNING *;
+
 -- name: GetSwappableEvents :many
 SELECT
     e.id, e.title, e.start_time, e.end_time, e.status, e.user_id, e.created_at, e.updated_at,
@@ -96,6 +105,14 @@ UPDATE swap_requests
 SET status = ?
 WHERE id = ?
 RETURNING *;
+
+-- name: DeleteSwapRequest :exec
+DELETE FROM swap_requests
+WHERE id = ?;
+
+-- name: GetSwapRequestsByEventID :many
+SELECT * FROM swap_requests
+WHERE requester_slot_id = ? OR responder_slot_id = ?;
 
 -- name: GetIncomingSwapRequests :many
 SELECT

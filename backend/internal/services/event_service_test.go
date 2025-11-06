@@ -17,7 +17,8 @@ func TestEventService(t *testing.T) {
 		testQueries, user := repository.SetupTestDBWithUser(t)
 		eventRepo := repository.NewEventRepository(testQueries)
 		userRepo := repository.NewUserRepository(testQueries)
-		eventService := NewEventService(eventRepo, userRepo)
+		swapRepo := repository.NewSwapRequestRepository(testQueries)
+		eventService := NewEventService(eventRepo, userRepo, swapRepo)
 
 		startTime := time.Now()
 		endTime := startTime.Add(time.Hour)
@@ -51,7 +52,8 @@ func TestEventService(t *testing.T) {
 		testQueries, user := repository.SetupTestDBWithUser(t)
 		eventRepo := repository.NewEventRepository(testQueries)
 		userRepo := repository.NewUserRepository(testQueries)
-		eventService := NewEventService(eventRepo, userRepo)
+		swapRepo := repository.NewSwapRequestRepository(testQueries)
+		eventService := NewEventService(eventRepo, userRepo, swapRepo)
 
 		startTime := time.Now()
 		endTime := startTime.Add(time.Hour)
@@ -105,7 +107,8 @@ func TestEventService(t *testing.T) {
 		testQueries, user := repository.SetupTestDBWithUser(t)
 		eventRepo := repository.NewEventRepository(testQueries)
 		userRepo := repository.NewUserRepository(testQueries)
-		eventService := NewEventService(eventRepo, userRepo)
+		swapRepo := repository.NewSwapRequestRepository(testQueries)
+		eventService := NewEventService(eventRepo, userRepo, swapRepo)
 
 		startTime := time.Now()
 		endTime := startTime.Add(time.Hour)
@@ -141,7 +144,8 @@ func TestEventService(t *testing.T) {
 		testQueries, user := repository.SetupTestDBWithUser(t)
 		eventRepo := repository.NewEventRepository(testQueries)
 		userRepo := repository.NewUserRepository(testQueries)
-		eventService := NewEventService(eventRepo, userRepo)
+		swapRepo := repository.NewSwapRequestRepository(testQueries)
+		eventService := NewEventService(eventRepo, userRepo, swapRepo)
 
 		startTime := time.Now()
 		endTime := startTime.Add(time.Hour)
@@ -173,7 +177,8 @@ func TestEventService(t *testing.T) {
 		testQueries, user := repository.SetupTestDBWithUser(t)
 		eventRepo := repository.NewEventRepository(testQueries)
 		userRepo := repository.NewUserRepository(testQueries)
-		eventService := NewEventService(eventRepo, userRepo)
+		swapRepo := repository.NewSwapRequestRepository(testQueries)
+		eventService := NewEventService(eventRepo, userRepo, swapRepo)
 
 		startTime := time.Now()
 		endTime := startTime.Add(time.Hour)
@@ -215,7 +220,8 @@ func TestEventService(t *testing.T) {
 		testQueries, user := repository.SetupTestDBWithUser(t)
 		eventRepo := repository.NewEventRepository(testQueries)
 		userRepo := repository.NewUserRepository(testQueries)
-		eventService := NewEventService(eventRepo, userRepo)
+		swapRepo := repository.NewSwapRequestRepository(testQueries)
+		eventService := NewEventService(eventRepo, userRepo, swapRepo)
 
 		otherUser, err := testQueries.CreateUser(context.Background(), db.CreateUserParams{
 			Name:     "unauthorized user",
@@ -262,7 +268,8 @@ func TestEventService(t *testing.T) {
 		testQueries, user := repository.SetupTestDBWithUser(t)
 		eventRepo := repository.NewEventRepository(testQueries)
 		userRepo := repository.NewUserRepository(testQueries)
-		eventService := NewEventService(eventRepo, userRepo)
+		swapRepo := repository.NewSwapRequestRepository(testQueries)
+		eventService := NewEventService(eventRepo, userRepo, swapRepo)
 
 		startTime := time.Now()
 		endTime := startTime.Add(time.Hour)
@@ -298,7 +305,8 @@ func TestEventService(t *testing.T) {
 		testQueries, user := repository.SetupTestDBWithUser(t)
 		eventRepo := repository.NewEventRepository(testQueries)
 		userRepo := repository.NewUserRepository(testQueries)
-		eventService := NewEventService(eventRepo, userRepo)
+		swapRepo := repository.NewSwapRequestRepository(testQueries)
+		eventService := NewEventService(eventRepo, userRepo, swapRepo)
 
 		otherUser, err := testQueries.CreateUser(context.Background(), db.CreateUserParams{
 			Name:     "unauthorized deleter",
@@ -339,7 +347,8 @@ func TestEventService(t *testing.T) {
 		testQueries, user := repository.SetupTestDBWithUser(t)
 		eventRepo := repository.NewEventRepository(testQueries)
 		userRepo := repository.NewUserRepository(testQueries)
-		eventService := NewEventService(eventRepo, userRepo)
+		swapRepo := repository.NewSwapRequestRepository(testQueries)
+		eventService := NewEventService(eventRepo, userRepo, swapRepo)
 
 		otherUser, err := testQueries.CreateUser(context.Background(), db.CreateUserParams{
 			Name:     "other service user",
@@ -382,7 +391,8 @@ func TestEventService(t *testing.T) {
 		testQueries, user := repository.SetupTestDBWithUser(t)
 		eventRepo := repository.NewEventRepository(testQueries)
 		userRepo := repository.NewUserRepository(testQueries)
-		eventService := NewEventService(eventRepo, userRepo)
+		swapRepo := repository.NewSwapRequestRepository(testQueries)
+		eventService := NewEventService(eventRepo, userRepo, swapRepo)
 
 		startTime := time.Now()
 		endTime := startTime.Add(time.Hour)
@@ -418,6 +428,73 @@ func TestEventService(t *testing.T) {
 
 		if events[0].Status != "SWAPPABLE" {
 			t.Errorf("expected event status to be SWAPPABLE, got %s", events[0].Status)
+		}
+	})
+
+	t.Run("UpdateEvent", func(t *testing.T) {
+		testQueries, user1 := repository.SetupTestDBWithUser(t)
+		user2, err := testQueries.CreateUser(context.Background(), db.CreateUserParams{Name: "user2", Email: "user2@example.com", Password: "password"})
+		if err != nil {
+			t.Fatalf("failed to create user2: %v", err)
+		}
+
+		eventRepo := repository.NewEventRepository(testQueries)
+		userRepo := repository.NewUserRepository(testQueries)
+		swapRepo := repository.NewSwapRequestRepository(testQueries)
+		eventService := NewEventService(eventRepo, userRepo, swapRepo)
+		swapService := NewSwapRequestService(swapRepo, eventRepo, userRepo)
+
+		// Create events for both users
+		event1, err := eventService.CreateEvent(context.Background(), CreateEventInput{Title: "Event 1", StartTime: time.Now(), EndTime: time.Now().Add(time.Hour), Status: "SWAPPABLE", UserID: user1.ID})
+		if err != nil {
+			t.Fatalf("failed to create event1: %v", err)
+		}
+		event2, err := eventService.CreateEvent(context.Background(), CreateEventInput{Title: "Event 2", StartTime: time.Now(), EndTime: time.Now().Add(time.Hour), Status: "SWAPPABLE", UserID: user2.ID})
+		if err != nil {
+			t.Fatalf("failed to create event2: %v", err)
+		}
+
+		// Create a swap request
+		_, err = swapService.CreateSwapRequest(context.Background(), CreateSwapRequestInput{RequesterUserID: user1.ID, ResponderUserID: user2.ID, RequesterSlotID: event1.ID, ResponderSlotID: event2.ID})
+		if err != nil {
+			t.Fatalf("failed to create swap request: %v", err)
+		}
+
+		// Update event1
+		updatedTitle := "Updated Event 1"
+		_, err = eventService.UpdateEvent(context.Background(), UpdateEventInput{ID: event1.ID, Title: updatedTitle, StartTime: event1.StartTime, EndTime: event1.EndTime, UserID: user1.ID})
+		if err != nil {
+			t.Fatalf("failed to update event: %v", err)
+		}
+
+		// Verify event1 is updated and status is BUSY
+		updatedEvent1, err := eventRepo.GetEventByID(context.Background(), event1.ID)
+		if err != nil {
+			t.Fatalf("failed to get updated event1: %v", err)
+		}
+		if updatedEvent1.Title != updatedTitle {
+			t.Errorf("expected updated title to be %q, got %q", updatedTitle, updatedEvent1.Title)
+		}
+		if updatedEvent1.Status != "BUSY" {
+			t.Errorf("expected updated event status to be BUSY, got %q", updatedEvent1.Status)
+		}
+
+		// Verify event2 status is back to SWAPPABLE
+		updatedEvent2, err := eventRepo.GetEventByID(context.Background(), event2.ID)
+		if err != nil {
+			t.Fatalf("failed to get updated event2: %v", err)
+		}
+		if updatedEvent2.Status != "SWAPPABLE" {
+			t.Errorf("expected other event status to be SWAPPABLE, got %q", updatedEvent2.Status)
+		}
+
+		// Verify swap request is deleted
+		swapRequests, err := swapRepo.GetSwapRequestsByEventID(context.Background(), event1.ID)
+		if err != nil {
+			t.Fatalf("failed to get swap requests by event ID: %v", err)
+		}
+		if len(swapRequests) != 0 {
+			t.Errorf("expected swap requests to be deleted, but found %d", len(swapRequests))
 		}
 	})
 }

@@ -144,6 +144,16 @@ func (q *Queries) DeleteEvent(ctx context.Context, id int64) error {
 	return err
 }
 
+const deleteSwapRequest = `-- name: DeleteSwapRequest :exec
+DELETE FROM swap_requests
+WHERE id = ?
+`
+
+func (q *Queries) DeleteSwapRequest(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteSwapRequest, id)
+	return err
+}
+
 const getEventByID = `-- name: GetEventByID :one
 SELECT id, title, start_time, end_time, status, user_id, created_at, updated_at FROM events
 WHERE id = ?
@@ -431,6 +441,48 @@ func (q *Queries) GetSwapRequestByID(ctx context.Context, id int64) (SwapRequest
 	return i, err
 }
 
+const getSwapRequestsByEventID = `-- name: GetSwapRequestsByEventID :many
+SELECT id, requester_user_id, responder_user_id, requester_slot_id, responder_slot_id, status, created_at, updated_at FROM swap_requests
+WHERE requester_slot_id = ? OR responder_slot_id = ?
+`
+
+type GetSwapRequestsByEventIDParams struct {
+	RequesterSlotID int64 `json:"requester_slot_id"`
+	ResponderSlotID int64 `json:"responder_slot_id"`
+}
+
+func (q *Queries) GetSwapRequestsByEventID(ctx context.Context, arg GetSwapRequestsByEventIDParams) ([]SwapRequest, error) {
+	rows, err := q.db.QueryContext(ctx, getSwapRequestsByEventID, arg.RequesterSlotID, arg.ResponderSlotID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SwapRequest
+	for rows.Next() {
+		var i SwapRequest
+		if err := rows.Scan(
+			&i.ID,
+			&i.RequesterUserID,
+			&i.ResponderUserID,
+			&i.RequesterSlotID,
+			&i.ResponderSlotID,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getSwappableEvents = `-- name: GetSwappableEvents :many
 SELECT
     e.id, e.title, e.start_time, e.end_time, e.status, e.user_id, e.created_at, e.updated_at,
@@ -524,6 +576,46 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (GetUserByIDRow, er
 		&i.ID,
 		&i.Name,
 		&i.Email,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateEvent = `-- name: UpdateEvent :one
+UPDATE events
+SET title = ?,
+    start_time = ?,
+    end_time = ?,
+    status = ?
+WHERE id = ?
+RETURNING id, title, start_time, end_time, status, user_id, created_at, updated_at
+`
+
+type UpdateEventParams struct {
+	Title     string    `json:"title"`
+	StartTime time.Time `json:"start_time"`
+	EndTime   time.Time `json:"end_time"`
+	Status    string    `json:"status"`
+	ID        int64     `json:"id"`
+}
+
+func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) (Event, error) {
+	row := q.db.QueryRowContext(ctx, updateEvent,
+		arg.Title,
+		arg.StartTime,
+		arg.EndTime,
+		arg.Status,
+		arg.ID,
+	)
+	var i Event
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.StartTime,
+		&i.EndTime,
+		&i.Status,
+		&i.UserID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

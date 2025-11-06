@@ -30,7 +30,7 @@ func setupTestServer(t *testing.T) (*httptest.Server, *db.Queries, crypto.JWT) {
 
 	authService := services.NewAuthService(userRepo, passwordCrypto, jwtManager)
 	userService := services.NewUserService(userRepo, passwordCrypto)
-	eventService := services.NewEventService(eventRepo, userRepo)
+	eventService := services.NewEventService(eventRepo, userRepo, swapRepo)
 	swapRequestService := services.NewSwapRequestService(swapRepo, eventRepo, userRepo)
 
 	server := NewServer(authService, userService, eventService, swapRequestService, jwtManager)

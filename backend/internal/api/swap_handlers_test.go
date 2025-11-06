@@ -19,7 +19,7 @@ func TestServer_handleGetIncomingSwapRequests(t *testing.T) {
 	eventRepo := repository.NewEventRepository(queries)
 	swapRepo := repository.NewSwapRequestRepository(queries)
 	authService := services.NewAuthService(userRepo, nil, nil) // Mocks
-	eventService := services.NewEventService(eventRepo, userRepo)
+	eventService := services.NewEventService(eventRepo, userRepo, swapRepo)
 	swapRequestService := services.NewSwapRequestService(swapRepo, eventRepo, userRepo)
 
 	server := NewServer(authService, nil, eventService, swapRequestService, nil)
@@ -90,7 +90,7 @@ func TestServer_handleGetOutgoingSwapRequests(t *testing.T) {
 	eventRepo := repository.NewEventRepository(queries)
 	swapRepo := repository.NewSwapRequestRepository(queries)
 	authService := services.NewAuthService(userRepo, nil, nil) // Mocks
-	eventService := services.NewEventService(eventRepo, userRepo)
+	eventService := services.NewEventService(eventRepo, userRepo, swapRepo)
 	swapRequestService := services.NewSwapRequestService(swapRepo, eventRepo, userRepo)
 
 	server := NewServer(authService, nil, eventService, swapRequestService, nil)

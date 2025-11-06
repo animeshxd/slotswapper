@@ -50,6 +50,37 @@ func (s *Server) handleGetEventByID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(event)
 }
 
+func (s *Server) handleUpdateEvent(w http.ResponseWriter, r *http.Request) {
+	eventID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid Event ID", http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := GetUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var input services.UpdateEventInput
+	err = json.NewDecoder(r.Body).Decode(&input)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	input.ID = eventID
+	input.UserID = userID
+
+	updatedEvent, err := s.eventService.UpdateEvent(r.Context(), input)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(updatedEvent)
+}
+
 func (s *Server) handleUpdateEventStatus(w http.ResponseWriter, r *http.Request) {
 	eventID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {

@@ -14,7 +14,8 @@ type EventRepository interface {
 	UpdateEventStatus(ctx context.Context, arg db.UpdateEventStatusParams) (db.Event, error)
 	UpdateEventUserID(ctx context.Context, arg db.UpdateEventUserIDParams) (db.Event, error)
 	DeleteEvent(ctx context.Context, id int64) error
-	GetSwappableEvents(ctx context.Context, userID int64) ([]db.GetSwappableEventsRow, error)
+GetSwappableEvents(ctx context.Context, userID int64) ([]db.GetSwappableEventsRow, error)
+	UpdateEvent(ctx context.Context, arg db.UpdateEventParams) (db.Event, error)
 }
 
 func (r *eventRepository) DeleteEvent(ctx context.Context, id int64) error {
@@ -55,4 +56,8 @@ func (r *eventRepository) UpdateEventUserID(ctx context.Context, arg db.UpdateEv
 
 func (r *eventRepository) GetSwappableEvents(ctx context.Context, userID int64) ([]db.GetSwappableEventsRow, error) {
 	return r.queries.GetSwappableEvents(ctx, userID)
+}
+
+func (r *eventRepository) UpdateEvent(ctx context.Context, arg db.UpdateEventParams) (db.Event, error) {
+	return r.queries.UpdateEvent(ctx, arg)
 }

@@ -22,7 +22,7 @@ func TestServer_handleSignUp_DuplicateEmail(t *testing.T) {
     passwordCrypto := crypto.NewPassword()
     jwtManager := crypto.NewJWT("test-secret", time.Minute)
 	authService := services.NewAuthService(userRepo, passwordCrypto, jwtManager)
-	eventService := services.NewEventService(eventRepo, userRepo)
+	eventService := services.NewEventService(eventRepo, userRepo, swapRepo)
 	swapRequestService := services.NewSwapRequestService(swapRepo, eventRepo, userRepo)
 
 	server := NewServer(authService, nil, eventService, swapRequestService, nil)
