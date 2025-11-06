@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useAuthStore } from "../../lib/store.ts";
+import { useAuthStore } from "@/features/auth/auth.store.ts";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useId } from "react";
 import { z } from "zod";

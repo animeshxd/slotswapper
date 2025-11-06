@@ -12,6 +12,7 @@ interface SwappableEvent {
   start_time: string;
   end_time: string;
   owner_name: string;
+  user_id: number;
 }
 
 // Define the type for the user's own swappable events
@@ -39,11 +40,11 @@ async function fetchMySwappableEvents(): Promise<MySwappableEvent[]> {
 }
 
 // API function to create a swap request
-async function createSwapRequest(requesterSlotId: number, responderSlotId: number): Promise<void> {
+async function createSwapRequest(requesterSlotId: number, responderSlotId: number, responderUserId: number): Promise<void> {
   const res = await fetch(`${import.meta.env.VITE_HTTP_SERVER_URL}/api/swap-request`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ requester_slot_id: requesterSlotId, responder_slot_id: responderSlotId }),
+    body: JSON.stringify({ requester_slot_id: requesterSlotId, responder_slot_id: responderSlotId, responder_user_id: responderUserId }),
     credentials: 'include',
   });
   if (!res.ok) {
@@ -88,7 +89,7 @@ function SwapRequestDialog({ event, myEvents }: { event: SwappableEvent, myEvent
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
 
   const mutation = useMutation({
-    mutationFn: (requesterSlotId: number) => createSwapRequest(requesterSlotId, event.id),
+    mutationFn: (requesterSlotId: number) => createSwapRequest(requesterSlotId, event.id, event.user_id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['swappable-events'] });
       // Optionally, close the dialog and show a success message
@@ -99,7 +100,7 @@ function SwapRequestDialog({ event, myEvents }: { event: SwappableEvent, myEvent
 
   return (
     <Dialog>
-      <DialogTrigger disabled={!hasSwappableEvents}>
+      <DialogTrigger  disabled={!hasSwappableEvents}>
         <div className="cursor-pointer">
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>

@@ -27,6 +27,9 @@ export const Route = createFileRoute("/_protected")({
         <Link to="/marketplace" className="[&.active]:font-bold">
           Marketplace
         </Link>
+        <Link to="/requests" className="[&.active]:font-bold">
+          Requests
+        </Link>
       </div>
       <hr />
       <Outlet />

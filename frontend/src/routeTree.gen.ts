@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProtectedRouteRouteImport } from './routes/_protected/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProtectedRequestsRouteImport } from './routes/_protected/requests'
 import { Route as ProtectedMarketplaceRouteImport } from './routes/_protected/marketplace'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
 import { Route as publicRegisterRouteImport } from './routes/(public)/register'
@@ -24,6 +25,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ProtectedRequestsRoute = ProtectedRequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
+  getParentRoute: () => ProtectedRouteRoute,
 } as any)
 const ProtectedMarketplaceRoute = ProtectedMarketplaceRouteImport.update({
   id: '/marketplace',
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof publicRegisterRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/marketplace': typeof ProtectedMarketplaceRoute
+  '/requests': typeof ProtectedRequestsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/register': typeof publicRegisterRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/marketplace': typeof ProtectedMarketplaceRoute
+  '/requests': typeof ProtectedRequestsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -68,12 +76,19 @@ export interface FileRoutesById {
   '/(public)/register': typeof publicRegisterRoute
   '/_protected/dashboard': typeof ProtectedDashboardRoute
   '/_protected/marketplace': typeof ProtectedMarketplaceRoute
+  '/_protected/requests': typeof ProtectedRequestsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/register' | '/dashboard' | '/marketplace'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/dashboard'
+    | '/marketplace'
+    | '/requests'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register' | '/dashboard' | '/marketplace'
+  to: '/' | '/login' | '/register' | '/dashboard' | '/marketplace' | '/requests'
   id:
     | '__root__'
     | '/'
@@ -82,6 +97,7 @@ export interface FileRouteTypes {
     | '/(public)/register'
     | '/_protected/dashboard'
     | '/_protected/marketplace'
+    | '/_protected/requests'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,6 +122,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_protected/requests': {
+      id: '/_protected/requests'
+      path: '/requests'
+      fullPath: '/requests'
+      preLoaderRoute: typeof ProtectedRequestsRouteImport
+      parentRoute: typeof ProtectedRouteRoute
     }
     '/_protected/marketplace': {
       id: '/_protected/marketplace'
@@ -141,11 +164,13 @@ declare module '@tanstack/react-router' {
 interface ProtectedRouteRouteChildren {
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
   ProtectedMarketplaceRoute: typeof ProtectedMarketplaceRoute
+  ProtectedRequestsRoute: typeof ProtectedRequestsRoute
 }
 
 const ProtectedRouteRouteChildren: ProtectedRouteRouteChildren = {
   ProtectedDashboardRoute: ProtectedDashboardRoute,
   ProtectedMarketplaceRoute: ProtectedMarketplaceRoute,
+  ProtectedRequestsRoute: ProtectedRequestsRoute,
 }
 
 const ProtectedRouteRouteWithChildren = ProtectedRouteRoute._addFileChildren(
