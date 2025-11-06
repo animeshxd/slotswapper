@@ -16,6 +16,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -33,7 +36,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <h2 className="text-lg font-semibold">SlotSwapper</h2>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarMenu className="px-2">
+        <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <Link to="/dashboard" className="[&.active]:font-bold">
@@ -51,12 +54,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link to="/requests" className="[&.active]:font-bold">
-                <Bell className="mr-2 h-4 w-4" />
-                Requests
-              </Link>
+            <SidebarMenuButton>
+              <Bell className="mr-2 h-4 w-4" />
+              Requests
             </SidebarMenuButton>
+            <SidebarMenuSub>
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild>
+                  <Link to="/requests/incoming" className="[&.active]:font-bold">
+                    Incoming
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild>
+                  <Link to="/requests/outgoing" className="[&.active]:font-bold">
+                    Outgoing
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            </SidebarMenuSub>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>

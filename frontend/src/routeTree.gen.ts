@@ -16,6 +16,8 @@ import { Route as ProtectedMarketplaceRouteImport } from './routes/_protected/ma
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
 import { Route as publicRegisterRouteImport } from './routes/(public)/register'
 import { Route as publicLoginRouteImport } from './routes/(public)/login'
+import { Route as ProtectedRequestsOutgoingRouteImport } from './routes/_protected/requests/outgoing'
+import { Route as ProtectedRequestsIncomingRouteImport } from './routes/_protected/requests/incoming'
 
 const ProtectedRouteRoute = ProtectedRouteRouteImport.update({
   id: '/_protected',
@@ -51,6 +53,18 @@ const publicLoginRoute = publicLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProtectedRequestsOutgoingRoute =
+  ProtectedRequestsOutgoingRouteImport.update({
+    id: '/outgoing',
+    path: '/outgoing',
+    getParentRoute: () => ProtectedRequestsRoute,
+  } as any)
+const ProtectedRequestsIncomingRoute =
+  ProtectedRequestsIncomingRouteImport.update({
+    id: '/incoming',
+    path: '/incoming',
+    getParentRoute: () => ProtectedRequestsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -58,7 +72,9 @@ export interface FileRoutesByFullPath {
   '/register': typeof publicRegisterRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/marketplace': typeof ProtectedMarketplaceRoute
-  '/requests': typeof ProtectedRequestsRoute
+  '/requests': typeof ProtectedRequestsRouteWithChildren
+  '/requests/incoming': typeof ProtectedRequestsIncomingRoute
+  '/requests/outgoing': typeof ProtectedRequestsOutgoingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -66,7 +82,9 @@ export interface FileRoutesByTo {
   '/register': typeof publicRegisterRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/marketplace': typeof ProtectedMarketplaceRoute
-  '/requests': typeof ProtectedRequestsRoute
+  '/requests': typeof ProtectedRequestsRouteWithChildren
+  '/requests/incoming': typeof ProtectedRequestsIncomingRoute
+  '/requests/outgoing': typeof ProtectedRequestsOutgoingRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -76,7 +94,9 @@ export interface FileRoutesById {
   '/(public)/register': typeof publicRegisterRoute
   '/_protected/dashboard': typeof ProtectedDashboardRoute
   '/_protected/marketplace': typeof ProtectedMarketplaceRoute
-  '/_protected/requests': typeof ProtectedRequestsRoute
+  '/_protected/requests': typeof ProtectedRequestsRouteWithChildren
+  '/_protected/requests/incoming': typeof ProtectedRequestsIncomingRoute
+  '/_protected/requests/outgoing': typeof ProtectedRequestsOutgoingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -87,8 +107,18 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/marketplace'
     | '/requests'
+    | '/requests/incoming'
+    | '/requests/outgoing'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register' | '/dashboard' | '/marketplace' | '/requests'
+  to:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/dashboard'
+    | '/marketplace'
+    | '/requests'
+    | '/requests/incoming'
+    | '/requests/outgoing'
   id:
     | '__root__'
     | '/'
@@ -98,6 +128,8 @@ export interface FileRouteTypes {
     | '/_protected/dashboard'
     | '/_protected/marketplace'
     | '/_protected/requests'
+    | '/_protected/requests/incoming'
+    | '/_protected/requests/outgoing'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,19 +190,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof publicLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_protected/requests/outgoing': {
+      id: '/_protected/requests/outgoing'
+      path: '/outgoing'
+      fullPath: '/requests/outgoing'
+      preLoaderRoute: typeof ProtectedRequestsOutgoingRouteImport
+      parentRoute: typeof ProtectedRequestsRoute
+    }
+    '/_protected/requests/incoming': {
+      id: '/_protected/requests/incoming'
+      path: '/incoming'
+      fullPath: '/requests/incoming'
+      preLoaderRoute: typeof ProtectedRequestsIncomingRouteImport
+      parentRoute: typeof ProtectedRequestsRoute
+    }
   }
 }
+
+interface ProtectedRequestsRouteChildren {
+  ProtectedRequestsIncomingRoute: typeof ProtectedRequestsIncomingRoute
+  ProtectedRequestsOutgoingRoute: typeof ProtectedRequestsOutgoingRoute
+}
+
+const ProtectedRequestsRouteChildren: ProtectedRequestsRouteChildren = {
+  ProtectedRequestsIncomingRoute: ProtectedRequestsIncomingRoute,
+  ProtectedRequestsOutgoingRoute: ProtectedRequestsOutgoingRoute,
+}
+
+const ProtectedRequestsRouteWithChildren =
+  ProtectedRequestsRoute._addFileChildren(ProtectedRequestsRouteChildren)
 
 interface ProtectedRouteRouteChildren {
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
   ProtectedMarketplaceRoute: typeof ProtectedMarketplaceRoute
-  ProtectedRequestsRoute: typeof ProtectedRequestsRoute
+  ProtectedRequestsRoute: typeof ProtectedRequestsRouteWithChildren
 }
 
 const ProtectedRouteRouteChildren: ProtectedRouteRouteChildren = {
   ProtectedDashboardRoute: ProtectedDashboardRoute,
   ProtectedMarketplaceRoute: ProtectedMarketplaceRoute,
-  ProtectedRequestsRoute: ProtectedRequestsRoute,
+  ProtectedRequestsRoute: ProtectedRequestsRouteWithChildren,
 }
 
 const ProtectedRouteRouteWithChildren = ProtectedRouteRoute._addFileChildren(
