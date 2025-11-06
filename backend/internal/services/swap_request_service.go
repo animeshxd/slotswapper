@@ -133,7 +133,9 @@ func (s *swapRequestService) UpdateSwapRequestStatus(ctx context.Context, input 
 		return nil, errors.New("swap request is not in PENDING status")
 	}
 
-	if swapRequest.ResponderUserID != input.UserID {
+		if input.Status == "REJECTED" && swapRequest.RequesterUserID == input.UserID {
+		// Requester is cancelling
+	} else if swapRequest.ResponderUserID != input.UserID {
 		return nil, errors.New("user is not authorized to update this swap request")
 	}
 
