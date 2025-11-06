@@ -8,6 +8,20 @@ import (
 	"slotswapper/internal/services"
 )
 
+func createCookie(key, value string) *http.Cookie {
+	return &http.Cookie{
+		Name:     key,
+		Value:    value,
+		Path:     "/",
+		Expires:  time.Now().Add(24 * time.Hour),
+		HttpOnly: true,
+		// Secure:   true, // Set to true in production
+		// SameSite: http.SameSiteLaxMode,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	}
+}
+
 func (s *Server) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	var input services.RegisterUserInput
 	err := json.NewDecoder(r.Body).Decode(&input)
@@ -26,16 +40,7 @@ func (s *Server) handleSignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set the token in a secure, HTTP-only cookie
-	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    token,
-		Path:     "/",
-		Expires:  time.Now().Add(24 * time.Hour),
-		HttpOnly: true,
-		Secure:   true, // Set to true in production
-		SameSite: http.SameSiteLaxMode,
-	})
+	http.SetCookie(w, createCookie("access_token", token))
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{"user": user, "token": token})
@@ -55,16 +60,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set the token in a secure, HTTP-only cookie
-	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    token,
-		Path:     "/",
-		Expires:  time.Now().Add(24 * time.Hour),
-		HttpOnly: true,
-		Secure:   true, // Set to true in production
-		SameSite: http.SameSiteLaxMode,
-	})
+	http.SetCookie(w, createCookie("access_token", token))
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{"user": user, "token": token})
