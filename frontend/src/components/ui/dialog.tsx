@@ -6,15 +6,21 @@ import { XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+type HaveChildren = {
+  children?: React.ReactNode,
+  disabled?: boolean,
+}
+
+
 function Dialog({
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Root>) {
+}: React.ComponentProps<typeof DialogPrimitive.Root> & HaveChildren) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 
 function DialogTrigger({
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
+}: React.ComponentProps<typeof DialogPrimitive.Trigger> & HaveChildren) {
   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
 }
 
