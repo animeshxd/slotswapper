@@ -62,7 +62,7 @@ func (s *Server) RegisterRoutes(router *http.ServeMux) {
 
 	// React
 	if s.config != nil && s.config.FrontendDir != "" {
-		router.Handle("GET /", s.HandleReactFiles(s.config.Addr))
+		router.Handle("GET /", s.HandleReactFiles(s.config.FrontendDir))
 	}
 }
 

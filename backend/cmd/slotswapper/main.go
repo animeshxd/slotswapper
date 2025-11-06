@@ -73,9 +73,10 @@ func main() {
 
 	handler := c.Handler(router)
 
-	if config.Addr == "" {
-		config.Addr = ":8080"
+	Addr := ":8080"
+	if config != nil && config.Addr != "" {
+		Addr = config.Addr
 	}
-	log.Printf("Server starting on %s\n", config.Addr)
-	log.Fatal(http.ListenAndServe(config.Addr, handler))
+	log.Printf("Server starting on %s\n", Addr)
+	log.Fatal(http.ListenAndServe(Addr, handler))
 }
