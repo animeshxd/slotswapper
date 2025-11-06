@@ -11,7 +11,7 @@ type SwapRequestRepository interface {
 	GetSwapRequestByID(ctx context.Context, id int64) (db.SwapRequest, error)
 	GetIncomingSwapRequests(ctx context.Context, userID int64) ([]db.GetIncomingSwapRequestsRow, error)
 	GetOutgoingSwapRequests(ctx context.Context, requesterUserID int64) ([]db.GetOutgoingSwapRequestsRow, error)
-UpdateSwapRequestStatus(ctx context.Context, arg db.UpdateSwapRequestStatusParams) (db.SwapRequest, error)
+	UpdateSwapRequestStatus(ctx context.Context, arg db.UpdateSwapRequestStatusParams) (db.SwapRequest, error)
 	DeleteSwapRequest(ctx context.Context, id int64) error
 	GetSwapRequestsByEventID(ctx context.Context, eventID int64) ([]db.SwapRequest, error)
 }

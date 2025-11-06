@@ -14,7 +14,7 @@ type EventRepository interface {
 	UpdateEventStatus(ctx context.Context, arg db.UpdateEventStatusParams) (db.Event, error)
 	UpdateEventUserID(ctx context.Context, arg db.UpdateEventUserIDParams) (db.Event, error)
 	DeleteEvent(ctx context.Context, id int64) error
-GetSwappableEvents(ctx context.Context, userID int64) ([]db.GetSwappableEventsRow, error)
+	GetSwappableEvents(ctx context.Context, userID int64) ([]db.GetSwappableEventsRow, error)
 	UpdateEvent(ctx context.Context, arg db.UpdateEventParams) (db.Event, error)
 }
 
