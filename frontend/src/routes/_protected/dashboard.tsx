@@ -96,7 +96,7 @@ async function updateEventStatus({
 	const res = await fetch(
 		`${import.meta.env.VITE_HTTP_SERVER_URL}/api/events/${id}/status`,
 		{
-			method: "PUT",
+			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ status }),
 			credentials: "include",

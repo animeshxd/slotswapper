@@ -279,7 +279,7 @@ func TestEventAPI(t *testing.T) {
 		// 4. Update Event Status
 		updateInput := services.UpdateEventStatusInput{Status: "SWAPPABLE"}
 		updateBody, _ := json.Marshal(updateInput)
-		updateReq, _ := http.NewRequest(http.MethodPut, ts.URL+fmt.Sprintf("/api/events/%d", createdEvent.ID), bytes.NewBuffer(updateBody))
+		updateReq, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("/api/events/%d/status", createdEvent.ID), bytes.NewBuffer(updateBody))
 		updateReq.Header.Set("Content-Type", "application/json")
 		updateReq.AddCookie(cookie)
 		updateRr := httptest.NewRecorder()
