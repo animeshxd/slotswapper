@@ -46,7 +46,7 @@ func main() {
 
 	authService := services.NewAuthService(userRepo, passwordCrypto, jwtManager)
 	userService := services.NewUserService(userRepo, passwordCrypto)
-	eventService := services.NewEventService(eventRepo, userRepo)
+	eventService := services.NewEventService(eventRepo, userRepo, swapRepo)
 	swapRequestService := services.NewSwapRequestService(swapRepo, eventRepo, userRepo)
 
 	server := api.NewServer(authService, userService, eventService, swapRequestService, jwtManager)
