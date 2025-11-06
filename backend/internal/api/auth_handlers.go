@@ -18,6 +18,10 @@ func (s *Server) handleSignUp(w http.ResponseWriter, r *http.Request) {
 
 	user, token, err := s.authService.Register(r.Context(), input)
 	if err != nil {
+		if err == services.ErrEmailExists {
+			http.Error(w, err.Error(), http.StatusConflict)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

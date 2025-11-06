@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"slotswapper/internal/crypto"
 	"slotswapper/internal/db"
@@ -36,9 +37,17 @@ func NewAuthService(userRepo repository.UserRepository, password crypto.Password
 	return &authService{userRepo: userRepo, password: password, jwtManager: jwtManager}
 }
 
+var ErrEmailExists = errors.New("user with this email already exists")
+
 func (s *authService) Register(ctx context.Context, input RegisterUserInput) (*db.User, string, error) {
 	if err := validation.Validate.Struct(input); err != nil {
 		return nil, "", err
+	}
+
+	// Check if user already exists
+	_, err := s.userRepo.GetUserByEmail(ctx, input.Email)
+	if err == nil {
+		return nil, "", ErrEmailExists
 	}
 
 	hashedPassword, err := s.password.Hash(input.Password)
@@ -54,6 +63,10 @@ func (s *authService) Register(ctx context.Context, input RegisterUserInput) (*d
 
 	user, err := s.userRepo.CreateUser(ctx, arg)
 	if err != nil {
+		// Check for unique constraint violation
+		if strings.Contains(err.Error(), "UNIQUE constraint failed: users.email") {
+			return nil, "", ErrEmailExists
+		}
 		return nil, "", err
 	}
 
