@@ -25,8 +25,8 @@ type UpdateSwapRequestStatusInput struct {
 type SwapRequestService interface {
 	CreateSwapRequest(ctx context.Context, input CreateSwapRequestInput) (*db.SwapRequest, error)
 	GetSwapRequestByID(ctx context.Context, id int64) (*db.SwapRequest, error)
-	GetIncomingSwapRequests(ctx context.Context, responderUserID int64) ([]db.SwapRequest, error)
-	GetOutgoingSwapRequests(ctx context.Context, requesterUserID int64) ([]db.SwapRequest, error)
+	GetIncomingSwapRequests(ctx context.Context, responderUserID int64) ([]db.GetIncomingSwapRequestsRow, error)
+	GetOutgoingSwapRequests(ctx context.Context, requesterUserID int64) ([]db.GetOutgoingSwapRequestsRow, error)
 	UpdateSwapRequestStatus(ctx context.Context, input UpdateSwapRequestStatusInput) (*db.SwapRequest, error)
 }
 
@@ -111,11 +111,11 @@ func (s *swapRequestService) GetSwapRequestByID(ctx context.Context, id int64) (
 	return &swapRequest, nil
 }
 
-func (s *swapRequestService) GetIncomingSwapRequests(ctx context.Context, responderUserID int64) ([]db.SwapRequest, error) {
+func (s *swapRequestService) GetIncomingSwapRequests(ctx context.Context, responderUserID int64) ([]db.GetIncomingSwapRequestsRow, error) {
 	return s.swapRepo.GetIncomingSwapRequests(ctx, responderUserID)
 }
 
-func (s *swapRequestService) GetOutgoingSwapRequests(ctx context.Context, requesterUserID int64) ([]db.SwapRequest, error) {
+func (s *swapRequestService) GetOutgoingSwapRequests(ctx context.Context, requesterUserID int64) ([]db.GetOutgoingSwapRequestsRow, error) {
 	return s.swapRepo.GetOutgoingSwapRequests(ctx, requesterUserID)
 }
 

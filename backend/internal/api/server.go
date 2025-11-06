@@ -51,6 +51,8 @@ func (s *Server) RegisterRoutes(router *http.ServeMux) {
 	// Swap routes
 	router.Handle("GET /api/swappable-slots", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleGetSwappableEvents)))
 	router.Handle("POST /api/swap-request", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleCreateSwapRequest)))
+	router.Handle("GET /api/swap-requests/incoming", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleGetIncomingSwapRequests)))
+	router.Handle("GET /api/swap-requests/outgoing", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleGetOutgoingSwapRequests)))
 	router.Handle("POST /api/swap-response/{id}", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleUpdateSwapRequestStatus)))
 }
 

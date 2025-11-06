@@ -435,4 +435,135 @@ func TestSwapRequestService(t *testing.T) {
 			t.Errorf("expected 'swap request is not in PENDING status' error, got %q", err)
 		}
 	})
+
+	t.Run("GetIncomingSwapRequests", func(t *testing.T) {
+		testQueries, user1 := repository.SetupTestDBWithUser(t)
+		user2, err := testQueries.CreateUser(context.Background(), db.CreateUserParams{
+			Name:     "user2_incoming",
+			Email:    "user2_incoming@example.com",
+			Password: "password",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user2: %v", err)
+		}
+
+		event1, err := testQueries.CreateEvent(context.Background(), db.CreateEventParams{
+			Title:     "User1 Incoming Event",
+			StartTime: time.Now(),
+			EndTime:   time.Now().Add(time.Hour),
+			Status:    "SWAPPABLE",
+			UserID:    user1.ID,
+		})
+		if err != nil {
+			t.Fatalf("failed to create event1: %v", err)
+		}
+
+		event2, err := testQueries.CreateEvent(context.Background(), db.CreateEventParams{
+			Title:     "User2 Incoming Event",
+			StartTime: time.Now().Add(2 * time.Hour),
+			EndTime:   time.Now().Add(3 * time.Hour),
+			Status:    "SWAPPABLE",
+			UserID:    user2.ID,
+		})
+		if err != nil {
+			t.Fatalf("failed to create event2: %v", err)
+		}
+
+		swapRepo := repository.NewSwapRequestRepository(testQueries)
+		eventRepo := repository.NewEventRepository(testQueries)
+		userRepo := repository.NewUserRepository(testQueries)
+		swapService := NewSwapRequestService(swapRepo, eventRepo, userRepo)
+
+		_, err = swapService.CreateSwapRequest(context.Background(), CreateSwapRequestInput{
+			RequesterUserID: user1.ID,
+			ResponderUserID: user2.ID,
+			RequesterSlotID: event1.ID,
+			ResponderSlotID: event2.ID,
+		})
+		if err != nil {
+			t.Fatalf("failed to create swap request: %v", err)
+		}
+
+		incomingRequests, err := swapService.GetIncomingSwapRequests(context.Background(), user2.ID)
+		if err != nil {
+			t.Fatalf("failed to get incoming swap requests: %v", err)
+		}
+
+		if len(incomingRequests) != 1 {
+			t.Errorf("expected 1 incoming request, got %d", len(incomingRequests))
+		}
+
+		if incomingRequests[0].RequesterName != user1.Name {
+			t.Errorf("expected requester name %q, got %q", user1.Name, incomingRequests[0].RequesterName)
+		}
+		if incomingRequests[0].RequesterEventTitle != event1.Title {
+			t.Errorf("expected requester event title %q, got %q", event1.Title, incomingRequests[0].RequesterEventTitle)
+		}
+	})
+
+	t.Run("GetOutgoingSwapRequests", func(t *testing.T) {
+		testQueries, user1 := repository.SetupTestDBWithUser(t)
+		user2, err := testQueries.CreateUser(context.Background(), db.CreateUserParams{
+			Name:     "user2_outgoing",
+			Email:    "user2_outgoing@example.com",
+			Password: "password",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user2: %v", err)
+		}
+
+		event1, err := testQueries.CreateEvent(context.Background(), db.CreateEventParams{
+			Title:     "User1 Outgoing Event",
+			StartTime: time.Now(),
+			EndTime:   time.Now().Add(time.Hour),
+			Status:    "SWAPPABLE",
+			UserID:    user1.ID,
+		})
+		if err != nil {
+			t.Fatalf("failed to create event1: %v", err)
+		}
+
+		event2, err := testQueries.CreateEvent(context.Background(), db.CreateEventParams{
+			Title:     "User2 Outgoing Event",
+			StartTime: time.Now().Add(2 * time.Hour),
+			EndTime:   time.Now().Add(3 * time.Hour),
+			Status:    "SWAPPABLE",
+			UserID:    user2.ID,
+		})
+		if err != nil {
+			t.Fatalf("failed to create event2: %v", err)
+		}
+
+		swapRepo := repository.NewSwapRequestRepository(testQueries)
+		eventRepo := repository.NewEventRepository(testQueries)
+		userRepo := repository.NewUserRepository(testQueries)
+		swapService := NewSwapRequestService(swapRepo, eventRepo, userRepo)
+
+		_, err = swapService.CreateSwapRequest(context.Background(), CreateSwapRequestInput{
+			RequesterUserID: user1.ID,
+			ResponderUserID: user2.ID,
+			RequesterSlotID: event1.ID,
+			ResponderSlotID: event2.ID,
+		})
+		if err != nil {
+			t.Fatalf("failed to create swap request: %v", err)
+		}
+
+		outgoingRequests, err := swapService.GetOutgoingSwapRequests(context.Background(), user1.ID)
+		if err != nil {
+			t.Fatalf("failed to get outgoing swap requests: %v", err)
+		}
+
+		if len(outgoingRequests) != 1 {
+			t.Errorf("expected 1 outgoing request, got %d", len(outgoingRequests))
+		}
+
+		if outgoingRequests[0].ResponderName != user2.Name {
+			t.Errorf("expected responder name %q, got %q", user2.Name, outgoingRequests[0].ResponderName)
+		}
+		if outgoingRequests[0].RequesterEventTitle != event1.Title {
+			t.Errorf("expected requester event title %q, got %q", event1.Title, outgoingRequests[0].RequesterEventTitle)
+		}
+	})
+
 }

@@ -91,16 +91,54 @@ INSERT INTO swap_requests (
 SELECT * FROM swap_requests
 WHERE id = ?;
 
--- name: GetIncomingSwapRequests :many
-SELECT * FROM swap_requests
-WHERE responder_user_id = ?;
-
--- name: GetOutgoingSwapRequests :many
-SELECT * FROM swap_requests
-WHERE requester_user_id = ?;
-
 -- name: UpdateSwapRequestStatus :one
 UPDATE swap_requests
 SET status = ?
 WHERE id = ?
 RETURNING *;
+
+-- name: GetIncomingSwapRequests :many
+SELECT
+    sr.id,
+    sr.status,
+    sr.requester_user_id,
+    requester.name AS requester_name,
+    requester_event.title AS requester_event_title,
+    requester_event.start_time AS requester_event_start_time,
+    requester_event.end_time AS requester_event_end_time,
+    responder_event.title AS responder_event_title,
+    responder_event.start_time AS responder_event_start_time,
+    responder_event.end_time AS responder_event_end_time
+FROM
+    swap_requests sr
+JOIN
+    users requester ON sr.requester_user_id = requester.id
+JOIN
+    events requester_event ON sr.requester_slot_id = requester_event.id
+JOIN
+    events responder_event ON sr.responder_slot_id = responder_event.id
+WHERE
+    sr.responder_user_id = ? AND sr.status = 'PENDING';
+
+-- name: GetOutgoingSwapRequests :many
+SELECT
+    sr.id,
+    sr.status,
+    sr.responder_user_id,
+    responder.name AS responder_name,
+    requester_event.title AS requester_event_title,
+    requester_event.start_time AS requester_event_start_time,
+    requester_event.end_time AS requester_event_end_time,
+    responder_event.title AS responder_event_title,
+    responder_event.start_time AS responder_event_start_time,
+    responder_event.end_time AS responder_event_end_time
+FROM
+    swap_requests sr
+JOIN
+    users responder ON sr.responder_user_id = responder.id
+JOIN
+    events requester_event ON sr.requester_slot_id = requester_event.id
+JOIN
+    events responder_event ON sr.responder_slot_id = responder_event.id
+WHERE
+    sr.requester_user_id = ? AND sr.status = 'PENDING';

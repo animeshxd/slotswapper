@@ -245,28 +245,62 @@ func (q *Queries) GetEventsByUserIDAndStatus(ctx context.Context, arg GetEventsB
 }
 
 const getIncomingSwapRequests = `-- name: GetIncomingSwapRequests :many
-SELECT id, requester_user_id, responder_user_id, requester_slot_id, responder_slot_id, status, created_at, updated_at FROM swap_requests
-WHERE responder_user_id = ?
+SELECT
+    sr.id,
+    sr.status,
+    sr.requester_user_id,
+    requester.name AS requester_name,
+    requester_event.title AS requester_event_title,
+    requester_event.start_time AS requester_event_start_time,
+    requester_event.end_time AS requester_event_end_time,
+    responder_event.title AS responder_event_title,
+    responder_event.start_time AS responder_event_start_time,
+    responder_event.end_time AS responder_event_end_time
+FROM
+    swap_requests sr
+JOIN
+    users requester ON sr.requester_user_id = requester.id
+JOIN
+    events requester_event ON sr.requester_slot_id = requester_event.id
+JOIN
+    events responder_event ON sr.responder_slot_id = responder_event.id
+WHERE
+    sr.responder_user_id = ? AND sr.status = 'PENDING'
 `
 
-func (q *Queries) GetIncomingSwapRequests(ctx context.Context, responderUserID int64) ([]SwapRequest, error) {
+type GetIncomingSwapRequestsRow struct {
+	ID                      int64     `json:"id"`
+	Status                  string    `json:"status"`
+	RequesterUserID         int64     `json:"requester_user_id"`
+	RequesterName           string    `json:"requester_name"`
+	RequesterEventTitle     string    `json:"requester_event_title"`
+	RequesterEventStartTime time.Time `json:"requester_event_start_time"`
+	RequesterEventEndTime   time.Time `json:"requester_event_end_time"`
+	ResponderEventTitle     string    `json:"responder_event_title"`
+	ResponderEventStartTime time.Time `json:"responder_event_start_time"`
+	ResponderEventEndTime   time.Time `json:"responder_event_end_time"`
+}
+
+func (q *Queries) GetIncomingSwapRequests(ctx context.Context, responderUserID int64) ([]GetIncomingSwapRequestsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getIncomingSwapRequests, responderUserID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []SwapRequest
+	var items []GetIncomingSwapRequestsRow
 	for rows.Next() {
-		var i SwapRequest
+		var i GetIncomingSwapRequestsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.RequesterUserID,
-			&i.ResponderUserID,
-			&i.RequesterSlotID,
-			&i.ResponderSlotID,
 			&i.Status,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.RequesterUserID,
+			&i.RequesterName,
+			&i.RequesterEventTitle,
+			&i.RequesterEventStartTime,
+			&i.RequesterEventEndTime,
+			&i.ResponderEventTitle,
+			&i.ResponderEventStartTime,
+			&i.ResponderEventEndTime,
 		); err != nil {
 			return nil, err
 		}
@@ -282,28 +316,62 @@ func (q *Queries) GetIncomingSwapRequests(ctx context.Context, responderUserID i
 }
 
 const getOutgoingSwapRequests = `-- name: GetOutgoingSwapRequests :many
-SELECT id, requester_user_id, responder_user_id, requester_slot_id, responder_slot_id, status, created_at, updated_at FROM swap_requests
-WHERE requester_user_id = ?
+SELECT
+    sr.id,
+    sr.status,
+    sr.responder_user_id,
+    responder.name AS responder_name,
+    requester_event.title AS requester_event_title,
+    requester_event.start_time AS requester_event_start_time,
+    requester_event.end_time AS requester_event_end_time,
+    responder_event.title AS responder_event_title,
+    responder_event.start_time AS responder_event_start_time,
+    responder_event.end_time AS responder_event_end_time
+FROM
+    swap_requests sr
+JOIN
+    users responder ON sr.responder_user_id = responder.id
+JOIN
+    events requester_event ON sr.requester_slot_id = requester_event.id
+JOIN
+    events responder_event ON sr.responder_slot_id = responder_event.id
+WHERE
+    sr.requester_user_id = ? AND sr.status = 'PENDING'
 `
 
-func (q *Queries) GetOutgoingSwapRequests(ctx context.Context, requesterUserID int64) ([]SwapRequest, error) {
+type GetOutgoingSwapRequestsRow struct {
+	ID                      int64     `json:"id"`
+	Status                  string    `json:"status"`
+	ResponderUserID         int64     `json:"responder_user_id"`
+	ResponderName           string    `json:"responder_name"`
+	RequesterEventTitle     string    `json:"requester_event_title"`
+	RequesterEventStartTime time.Time `json:"requester_event_start_time"`
+	RequesterEventEndTime   time.Time `json:"requester_event_end_time"`
+	ResponderEventTitle     string    `json:"responder_event_title"`
+	ResponderEventStartTime time.Time `json:"responder_event_start_time"`
+	ResponderEventEndTime   time.Time `json:"responder_event_end_time"`
+}
+
+func (q *Queries) GetOutgoingSwapRequests(ctx context.Context, requesterUserID int64) ([]GetOutgoingSwapRequestsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getOutgoingSwapRequests, requesterUserID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []SwapRequest
+	var items []GetOutgoingSwapRequestsRow
 	for rows.Next() {
-		var i SwapRequest
+		var i GetOutgoingSwapRequestsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.RequesterUserID,
-			&i.ResponderUserID,
-			&i.RequesterSlotID,
-			&i.ResponderSlotID,
 			&i.Status,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ResponderUserID,
+			&i.ResponderName,
+			&i.RequesterEventTitle,
+			&i.RequesterEventStartTime,
+			&i.RequesterEventEndTime,
+			&i.ResponderEventTitle,
+			&i.ResponderEventStartTime,
+			&i.ResponderEventEndTime,
 		); err != nil {
 			return nil, err
 		}
