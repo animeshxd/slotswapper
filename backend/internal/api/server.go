@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-playground/validator/v10"
 	"slotswapper/internal/crypto"
 	"slotswapper/internal/services"
+
+	"github.com/go-playground/validator/v10"
 )
 
 type Server struct {
@@ -56,6 +57,10 @@ func (s *Server) RegisterRoutes(router *http.ServeMux) {
 	router.Handle("GET /api/swap-requests/incoming", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleGetIncomingSwapRequests)))
 	router.Handle("GET /api/swap-requests/outgoing", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleGetOutgoingSwapRequests)))
 	router.Handle("POST /api/swap-response/{id}", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleUpdateSwapRequestStatus)))
+
+	// React
+	distPath := "frontend/dist"
+	router.Handle("GET /", s.HandleReactFiles(distPath))
 }
 
 func (s *Server) healthCheck(w http.ResponseWriter, r *http.Request) {
