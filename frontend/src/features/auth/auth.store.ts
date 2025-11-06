@@ -19,3 +19,10 @@ export const useAuthStore = create<AuthState>((set) => ({
 	setUser: (user) => set({ user, isAuthenticated: !!user }),
 	logout: () => set({ user: null, isAuthenticated: false }),
 }));
+
+export async function serverLogout() {
+	await fetch(`${import.meta.env.VITE_HTTP_SERVER_URL}/api/logout`, {
+        method: "POST",
+		credentials: "include",
+	});
+}

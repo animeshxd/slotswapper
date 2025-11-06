@@ -6,7 +6,7 @@ import * as React from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { LogOut, LayoutDashboard, ShoppingCart, Bell } from "lucide-react";
 
-import { useAuthStore } from "@/features/auth/auth.store";
+import { serverLogout, useAuthStore } from "@/features/auth/auth.store";
 import { Button } from "@/components/ui/button";
 import {
 	Sidebar,
@@ -27,7 +27,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 	const handleLogout = () => {
 		logout();
-		navigate({ to: "/login" });
+        serverLogout().finally(() => navigate({ to: "/login" }))
 	};
 
 	return (
