@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useAuthStore, type User } from "../lib/store.ts";
+import { useAuthStore, type User } from "@/features/auth/auth.store.ts";
 
 async function fetchMe(): Promise<User | { user: User }> {
 	const res = await fetch(`${import.meta.env.VITE_HTTP_SERVER_URL}/api/me`);
