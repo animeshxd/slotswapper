@@ -33,10 +33,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	return (
 		<Sidebar {...props}>
 			<SidebarHeader>
-				<h2 className="text-lg font-semibold">SlotSwapper</h2>
+				<h2 className="text-lg font-semibold px-3">SlotSwapper</h2>
 			</SidebarHeader>
 			<SidebarContent>
-				<SidebarMenu>
+				<SidebarMenu className="px-3">
 					<SidebarMenuItem>
 						<SidebarMenuButton asChild>
 							<Link to="/dashboard" className="[&.active]:font-bold">
