@@ -35,6 +35,7 @@ func (s *Server) RegisterRoutes(router *http.ServeMux) {
 	// Auth routes
 	router.HandleFunc("POST /api/signup", s.handleSignUp)
 	router.HandleFunc("POST /api/login", s.handleLogin)
+	router.HandleFunc("POST /api/logout", s.handleLogout)
 
 	// Protected routes
 	// User routes
