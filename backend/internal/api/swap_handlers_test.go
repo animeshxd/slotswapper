@@ -22,7 +22,7 @@ func TestServer_handleGetIncomingSwapRequests(t *testing.T) {
 	eventService := services.NewEventService(eventRepo, userRepo, swapRepo)
 	swapRequestService := services.NewSwapRequestService(swapRepo, eventRepo, userRepo)
 
-	server := NewServer(authService, nil, eventService, swapRequestService, nil)
+	server := NewServer(nil, authService, nil, eventService, swapRequestService, nil)
 
 	// Create two users
 	user1, err := userRepo.CreateUser(context.Background(), db.CreateUserParams{Name: "User One", Email: "user1@test.com", Password: "password"})
@@ -93,7 +93,7 @@ func TestServer_handleGetOutgoingSwapRequests(t *testing.T) {
 	eventService := services.NewEventService(eventRepo, userRepo, swapRepo)
 	swapRequestService := services.NewSwapRequestService(swapRepo, eventRepo, userRepo)
 
-	server := NewServer(authService, nil, eventService, swapRequestService, nil)
+	server := NewServer(nil, authService, nil, eventService, swapRequestService, nil)
 
 	// Create two users
 	user1, err := userRepo.CreateUser(context.Background(), db.CreateUserParams{Name: "User One", Email: "user1@test.com", Password: "password"})

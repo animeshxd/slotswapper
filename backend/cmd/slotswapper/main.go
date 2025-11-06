@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -18,8 +19,12 @@ import (
 )
 
 func main() {
-	dbPath := "./db/slotswapper.db"
-	dbConn, err := sql.Open("sqlite3", dbPath)
+	configPath := flag.String("config", "config.json", "path to configuration file")
+	dbPath := flag.String("db", "db/slotswapper.db", "path to database file")
+	flag.Parse()
+	config, err := api.LoadConfig(*configPath)
+
+	dbConn, err := sql.Open("sqlite3", *dbPath)
 	if err != nil {
 		log.Fatalf("failed to open database: %v", err)
 	}
@@ -49,7 +54,10 @@ func main() {
 	eventService := services.NewEventService(eventRepo, userRepo, swapRepo)
 	swapRequestService := services.NewSwapRequestService(swapRepo, eventRepo, userRepo)
 
-	server := api.NewServer(authService, userService, eventService, swapRequestService, jwtManager)
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+	server := api.NewServer(config, authService, userService, eventService, swapRequestService, jwtManager)
 
 	router := http.NewServeMux()
 	server.RegisterRoutes(router)
@@ -64,8 +72,10 @@ func main() {
 	})
 
 	handler := c.Handler(router)
-	
 
-	log.Println("Server starting on port 8080...")
-	log.Fatal(http.ListenAndServe(":8080", handler))
+	if config.Addr == "" {
+		config.Addr = ":8080"
+	}
+	log.Printf("Server starting on %s\n", config.Addr)
+	log.Fatal(http.ListenAndServe(config.Addr, handler))
 }

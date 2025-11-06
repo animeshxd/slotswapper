@@ -11,6 +11,7 @@ import (
 )
 
 type Server struct {
+	config             *Config
 	authService        services.AuthService
 	userService        services.UserService
 	eventService       services.EventService
@@ -19,8 +20,9 @@ type Server struct {
 	jwtManager         crypto.JWT
 }
 
-func NewServer(authService services.AuthService, userService services.UserService, eventService services.EventService, swapRequestService services.SwapRequestService, jwtManager crypto.JWT) *Server {
+func NewServer(config *Config, authService services.AuthService, userService services.UserService, eventService services.EventService, swapRequestService services.SwapRequestService, jwtManager crypto.JWT) *Server {
 	return &Server{
+		config:             config,
 		authService:        authService,
 		userService:        userService,
 		eventService:       eventService,
@@ -59,8 +61,9 @@ func (s *Server) RegisterRoutes(router *http.ServeMux) {
 	router.Handle("POST /api/swap-response/{id}", AuthMiddleware(s.jwtManager)(http.HandlerFunc(s.handleUpdateSwapRequestStatus)))
 
 	// React
-	distPath := "frontend/dist"
-	router.Handle("GET /", s.HandleReactFiles(distPath))
+	if s.config != nil && s.config.FrontendDir != "" {
+		router.Handle("GET /", s.HandleReactFiles(s.config.Addr))
+	}
 }
 
 func (s *Server) healthCheck(w http.ResponseWriter, r *http.Request) {

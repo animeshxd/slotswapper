@@ -33,7 +33,7 @@ func setupTestServer(t *testing.T) (*httptest.Server, *db.Queries, crypto.JWT) {
 	eventService := services.NewEventService(eventRepo, userRepo, swapRepo)
 	swapRequestService := services.NewSwapRequestService(swapRepo, eventRepo, userRepo)
 
-	server := NewServer(authService, userService, eventService, swapRequestService, jwtManager)
+	server := NewServer(nil, authService, userService, eventService, swapRequestService, jwtManager)
 	router := http.NewServeMux()
 	server.RegisterRoutes(router)
 

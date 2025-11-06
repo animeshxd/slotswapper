@@ -19,13 +19,13 @@ func TestServer_handleSignUp_DuplicateEmail(t *testing.T) {
 	userRepo := repository.NewUserRepository(queries)
 	eventRepo := repository.NewEventRepository(queries)
 	swapRepo := repository.NewSwapRequestRepository(queries)
-    passwordCrypto := crypto.NewPassword()
-    jwtManager := crypto.NewJWT("test-secret", time.Minute)
+	passwordCrypto := crypto.NewPassword()
+	jwtManager := crypto.NewJWT("test-secret", time.Minute)
 	authService := services.NewAuthService(userRepo, passwordCrypto, jwtManager)
 	eventService := services.NewEventService(eventRepo, userRepo, swapRepo)
 	swapRequestService := services.NewSwapRequestService(swapRepo, eventRepo, userRepo)
 
-	server := NewServer(authService, nil, eventService, swapRequestService, nil)
+	server := NewServer(nil, authService, nil, eventService, swapRequestService, nil)
 
 	// First registration should succeed
 	input := services.RegisterUserInput{
