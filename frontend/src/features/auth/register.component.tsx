@@ -5,7 +5,14 @@ import { useMutation } from "@tanstack/react-query";
 import { useAuthStore } from "./auth.store";
 import type { TreeifyError } from "@/lib/types.ts";
 import { Button } from "@/components/ui/button.tsx";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card.tsx";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
 
@@ -34,7 +41,6 @@ async function registerUser(values: RegisterSchema) {
 
 	return res.json();
 }
-
 
 export default function RegisterComponent() {
 	const navigate = useNavigate();
@@ -88,23 +94,58 @@ export default function RegisterComponent() {
 					<form onSubmit={handleSubmit} className="grid gap-4">
 						<div className="grid gap-2">
 							<Label htmlFor={nameId}>Name</Label>
-							<Input id={nameId} value={name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)} required />
+							<Input
+								id={nameId}
+								value={name}
+								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+									setName(e.target.value)
+								}
+								required
+							/>
 							{nameError && <p className="text-red-500 text-xs">{nameError}</p>}
 						</div>
 						<div className="grid gap-2">
 							<Label htmlFor={emailId}>Email</Label>
-							<Input id={emailId} type="email" value={email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} required />
-							{emailError && <p className="text-red-500 text-xs">{emailError}</p>}
+							<Input
+								id={emailId}
+								type="email"
+								value={email}
+								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+									setEmail(e.target.value)
+								}
+								required
+							/>
+							{emailError && (
+								<p className="text-red-500 text-xs">{emailError}</p>
+							)}
 						</div>
 						<div className="grid gap-2">
 							<Label htmlFor={passwordId}>Password</Label>
-							<Input id={passwordId} type="password" value={password} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} required />
-							{passwordError && <p className="text-red-500 text-xs">{passwordError}</p>}
+							<Input
+								id={passwordId}
+								type="password"
+								value={password}
+								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+									setPassword(e.target.value)
+								}
+								required
+							/>
+							{passwordError && (
+								<p className="text-red-500 text-xs">{passwordError}</p>
+							)}
 						</div>
-						<Button type="submit" className="w-full" disabled={mutation.isPending}>
+						<Button
+							type="submit"
+							className="w-full"
+							disabled={mutation.isPending}
+						>
 							{mutation.isPending ? "Creating account..." : "Create an account"}
 						</Button>
-						{mutation.isError && <p className="text-red-500 text-xs mt-2">{mutation.error.message}</p>}
+						{mutation.isError && (
+							<p className="text-red-500 text-xs mt-2">
+								{mutation.error.message}
+							</p>
+						)}
 					</form>
 				</CardContent>
 				<CardFooter>

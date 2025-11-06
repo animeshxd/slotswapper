@@ -4,10 +4,17 @@ import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { useAuthStore } from "@/features/auth/auth.store.ts";
 import type { TreeifyError } from "@/lib/types.ts";
-import { Button } from "@/components/ui/button.tsx"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card.tsx"
-import { Input } from "@/components/ui/input.tsx"
-import { Label } from "@/components/ui/label.tsx"
+import { Button } from "@/components/ui/button.tsx";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card.tsx";
+import { Input } from "@/components/ui/input.tsx";
+import { Label } from "@/components/ui/label.tsx";
 
 const loginSchema = z.object({
 	email: z.string().email(),
@@ -25,7 +32,7 @@ async function loginUser(values: LoginSchema) {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(values),
-        credentials: "include",
+		credentials: "include",
 	});
 
 	if (!res.ok) {
@@ -36,12 +43,11 @@ async function loginUser(values: LoginSchema) {
 	return res.json();
 }
 
-
 export default function LoginComponent() {
 	const navigate = useNavigate();
 	const { redirect } = useSearch({
-        strict: false,
-    });
+		strict: false,
+	});
 	const { setUser } = useAuthStore();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
@@ -94,18 +100,46 @@ export default function LoginComponent() {
 					<form onSubmit={handleSubmit} className="grid gap-4">
 						<div className="grid gap-2">
 							<Label htmlFor={emailId}>Email</Label>
-							<Input id={emailId} type="email" value={email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} required />
-							{emailError && <p className="text-red-500 text-xs">{emailError}</p>}
+							<Input
+								id={emailId}
+								type="email"
+								value={email}
+								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+									setEmail(e.target.value)
+								}
+								required
+							/>
+							{emailError && (
+								<p className="text-red-500 text-xs">{emailError}</p>
+							)}
 						</div>
 						<div className="grid gap-2">
 							<Label htmlFor={passwordId}>Password</Label>
-							<Input id={passwordId} type="password" value={password} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} required />
-							{passwordError && <p className="text-red-500 text-xs">{passwordError}</p>}
+							<Input
+								id={passwordId}
+								type="password"
+								value={password}
+								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+									setPassword(e.target.value)
+								}
+								required
+							/>
+							{passwordError && (
+								<p className="text-red-500 text-xs">{passwordError}</p>
+							)}
 						</div>
-						<Button type="submit" className="w-full" disabled={mutation.isPending}>
+						<Button
+							type="submit"
+							className="w-full"
+							disabled={mutation.isPending}
+						>
 							{mutation.isPending ? "Signing in..." : "Sign in"}
 						</Button>
-						{mutation.isError && <p className="text-red-500 text-xs mt-2">{mutation.error.message}</p>}
+						{mutation.isError && (
+							<p className="text-red-500 text-xs mt-2">
+								{mutation.error.message}
+							</p>
+						)}
 					</form>
 				</CardContent>
 				<CardFooter>
