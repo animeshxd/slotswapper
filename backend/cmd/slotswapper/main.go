@@ -24,7 +24,11 @@ func main() {
 	port := os.Getenv("PORT")
 	flag.Parse()
 	config, err := api.LoadConfig(*configPath)
-
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+	applyRenderCloudConfig(config)
+	
 	dbConn, err := sql.Open("sqlite3", *dbPath)
 	if err != nil {
 		log.Fatalf("failed to open database: %v", err)
@@ -55,9 +59,7 @@ func main() {
 	eventService := services.NewEventService(eventRepo, userRepo, swapRepo)
 	swapRequestService := services.NewSwapRequestService(swapRepo, eventRepo, userRepo)
 
-	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
-	}
+
 	server := api.NewServer(config, authService, userService, eventService, swapRequestService, jwtManager)
 
 	router := http.NewServeMux()
