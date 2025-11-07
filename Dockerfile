@@ -28,7 +28,7 @@ COPY backend ./
 ENV CGO_ENABLED=1
 RUN go build -tags "sqlite" \
     -ldflags '-linkmode external -extldflags "-static"' \
-    -o http /app/cmd/slotswapper/main.go
+    -o http /app/cmd/slotswapper
 RUN sed -i 's|"frontendDir":.*|"frontendDir": "/app/frontend/dist"|g' /app/config.json
 
 FROM scratch AS final
